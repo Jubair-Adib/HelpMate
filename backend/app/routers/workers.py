@@ -1,0 +1,158 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from typing import List
+from app.core.database import get_db
+from app.models.worker import Worker, WorkerOrder
+from app.schemas.worker import (
+    WorkerUpdate, WorkProfileUpdate, WorkerResponse, 
+    WorkerOrderCreate, WorkerOrderResponse
+)
+from app.routers.auth import get_current_user
+
+router = APIRouter(prefix="/workers", tags=["workers"])
+
+
+@router.get("/profile", response_model=WorkerResponse)
+async def get_worker_profile(current_worker: Worker = Depends(get_current_user)):
+    """Get current worker's profile"""
+    return current_worker
+
+
+@router.put("/profile", response_model=WorkerResponse)
+async def update_worker_profile(
+    worker_update: WorkerUpdate,
+    current_worker: Worker = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update worker's basic profile"""
+    for field, value in worker_update.dict(exclude_unset=True).items():
+        setattr(current_worker, field, value)
+    
+    db.commit()
+    db.refresh(current_worker)
+    return current_worker
+
+
+@router.put("/work-profile", response_model=WorkerResponse)
+async def update_work_profile(
+    work_profile: WorkProfileUpdate,
+    current_worker: Worker = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update worker's work profile"""
+    for field, value in work_profile.dict(exclude_unset=True).items():
+        setattr(current_worker, field, value)
+    
+    db.commit()
+    db.refresh(current_worker)
+    return current_worker
+
+
+@router.get("/", response_model=List[WorkerResponse])
+def get_workers(
+    category_id: int = None,
+    available_only: bool = True,
+    db: Session = Depends(get_db)
+):
+    """Get all workers with optional filtering"""
+    query = db.query(Worker).filter(Worker.is_active == True)
+    
+    if available_only:
+        query = query.filter(Worker.is_available == True)
+    
+    if category_id:
+        # Filter by category through services
+        query = query.join(Worker.services).filter(Worker.services.any(category_id=category_id))
+    
+    workers = query.all()
+    return workers
+
+
+@router.get("/{worker_id}", response_model=WorkerResponse)
+def get_worker(worker_id: int, db: Session = Depends(get_db)):
+    """Get a specific worker by ID"""
+    worker = db.query(Worker).filter(Worker.id == worker_id).first()
+    if not worker:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Worker not found"
+        )
+    return worker
+
+
+# Worker Orders (workers ordering services from other workers)
+@router.post("/orders", response_model=WorkerOrderResponse)
+async def create_worker_order(
+    order: WorkerOrderCreate,
+    current_worker: Worker = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new order for a worker"""
+    # Check if the service exists and is available
+    from app.models.service import Service
+    service = db.query(Service).filter(Service.id == order.service_id).first()
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Service not found"
+        )
+    
+    if not service.is_available:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Service is not available"
+        )
+    
+    # Create worker order
+    db_order = WorkerOrder(
+        worker_id=current_worker.id,
+        service_id=order.service_id,
+        description=order.description,
+        scheduled_date=order.scheduled_date
+    )
+    db.add(db_order)
+    db.commit()
+    db.refresh(db_order)
+    return db_order
+
+
+@router.get("/orders", response_model=List[WorkerOrderResponse])
+async def get_worker_orders(
+    current_worker: Worker = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all orders placed by the current worker"""
+    orders = db.query(WorkerOrder).filter(WorkerOrder.worker_id == current_worker.id).all()
+    return orders
+
+
+@router.put("/orders/{order_id}", response_model=WorkerOrderResponse)
+async def update_worker_order(
+    order_id: int,
+    status: str,
+    current_worker: Worker = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update worker order status"""
+    order = db.query(WorkerOrder).filter(
+        WorkerOrder.id == order_id,
+        WorkerOrder.worker_id == current_worker.id
+    ).first()
+    
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
+    
+    valid_statuses = ["pending", "accepted", "completed", "cancelled"]
+    if status not in valid_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status. Must be one of: {valid_statuses}"
+        )
+    
+    order.status = status
+    db.commit()
+    db.refresh(order)
+    return order 
