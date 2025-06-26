@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart';
-import 'login_page.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import 'login_screen.dart';
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+class ProfileTab extends StatelessWidget {
+  const ProfileTab({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
+    final name = user?.fullName.isNotEmpty == true ? user!.fullName : 'User';
+    final email = user?.email ?? '';
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -30,7 +34,7 @@ class ProfilePage extends StatelessWidget {
             onPressed: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
               );
             },
           ),
@@ -61,18 +65,18 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'John Doe',
-                    style: TextStyle(
+                  Text(
+                    name,
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                       fontFamily: 'Montserrat',
                     ),
                   ),
-                  const Text(
-                    'john.doe@example.com',
-                    style: TextStyle(
+                  Text(
+                    email,
+                    style: const TextStyle(
                       fontSize: 16,
                       color: Colors.white70,
                       fontFamily: 'Montserrat',
@@ -81,7 +85,6 @@ class ProfilePage extends StatelessWidget {
                 ],
               ),
             ),
-
             // Profile Options
             Padding(
               padding: const EdgeInsets.all(20),
@@ -91,73 +94,55 @@ class ProfilePage extends StatelessWidget {
                     icon: Icons.person_outline,
                     title: 'Personal Information',
                     subtitle: 'Edit your profile details',
-                    onTap: () {
-                      // TODO: Navigate to edit profile
-                    },
+                    onTap: () {},
                   ),
                   _buildProfileOption(
                     icon: Icons.location_on_outlined,
                     title: 'Address',
                     subtitle: 'Manage your addresses',
-                    onTap: () {
-                      // TODO: Navigate to address management
-                    },
+                    onTap: () {},
                   ),
                   _buildProfileOption(
                     icon: Icons.payment_outlined,
                     title: 'Payment Methods',
                     subtitle: 'Manage your payment options',
-                    onTap: () {
-                      // TODO: Navigate to payment methods
-                    },
+                    onTap: () {},
                   ),
                   _buildProfileOption(
                     icon: Icons.history,
                     title: 'Service History',
                     subtitle: 'View your past services',
-                    onTap: () {
-                      // TODO: Navigate to service history
-                    },
+                    onTap: () {},
                   ),
                   _buildProfileOption(
                     icon: Icons.favorite_outline,
                     title: 'Favorites',
                     subtitle: 'Your saved service providers',
-                    onTap: () {
-                      // TODO: Navigate to favorites
-                    },
+                    onTap: () {},
                   ),
                   _buildProfileOption(
                     icon: Icons.notifications_outlined,
                     title: 'Notifications',
                     subtitle: 'Manage your notifications',
-                    onTap: () {
-                      // TODO: Navigate to notifications
-                    },
+                    onTap: () {},
                   ),
                   _buildProfileOption(
                     icon: Icons.security,
                     title: 'Privacy & Security',
                     subtitle: 'Manage your account security',
-                    onTap: () {
-                      // TODO: Navigate to privacy settings
-                    },
+                    onTap: () {},
                   ),
                   _buildProfileOption(
                     icon: Icons.help_outline,
                     title: 'Help & Support',
                     subtitle: 'Get help and contact support',
-                    onTap: () {
-                      // TODO: Navigate to help
-                    },
+                    onTap: () {},
                   ),
                   _buildProfileOption(
                     icon: Icons.info_outline,
                     title: 'About HelpMate',
                     subtitle: 'Learn more about the app',
-                    onTap: () {
-                      // TODO: Navigate to about
-                    },
+                    onTap: () {},
                   ),
                 ],
               ),

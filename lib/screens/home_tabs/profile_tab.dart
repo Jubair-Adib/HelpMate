@@ -1,0 +1,253 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../constants/theme.dart';
+import '../../providers/auth_provider.dart';
+import '../../models/user.dart';
+import '../edit_profile_screen.dart';
+import '../login_screen.dart';
+
+class ProfileTab extends StatelessWidget {
+  const ProfileTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final user = authProvider.currentUser;
+
+        if (user == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Profile'),
+            elevation: 0,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: () => _showLogoutDialog(context, authProvider),
+              ),
+            ],
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppTheme.spacingL),
+            child: Column(
+              children: [
+                _buildProfileHeader(user),
+                const SizedBox(height: AppTheme.spacingXL),
+                _buildProfileActions(context, user),
+                const SizedBox(height: AppTheme.spacingXL),
+                _buildProfileInfo(user),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProfileHeader(User user) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppTheme.spacingL),
+        child: Column(
+          children: [
+            // Profile Avatar
+            CircleAvatar(
+              radius: 50,
+              backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+              child: Text(
+                user.fullName.split(' ').map((e) => e[0]).join(''),
+                style: AppTheme.heading1.copyWith(color: AppTheme.primaryColor),
+              ),
+            ),
+            const SizedBox(height: AppTheme.spacingM),
+
+            // User Name
+            Text(user.fullName, style: AppTheme.heading2),
+            const SizedBox(height: AppTheme.spacingS),
+
+            // User Type
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spacingM,
+                vertical: AppTheme.spacingS,
+              ),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppTheme.radiusM),
+              ),
+              child: Text(
+                user is Worker ? 'Service Provider' : 'Service Seeker',
+                style: AppTheme.bodyMedium.copyWith(
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileActions(BuildContext context, User user) {
+    return Card(
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text('Edit Profile'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => EditProfileScreen(user: user),
+                ),
+              );
+            },
+          ),
+          if (user is Worker) ...[
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.work),
+              title: const Text('My Services'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                // TODO: Navigate to services screen
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Services management coming soon!'),
+                  ),
+                );
+              },
+            ),
+          ],
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              // TODO: Navigate to settings screen
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Settings coming soon!')),
+              );
+            },
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.help),
+            title: const Text('Help & Support'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              // TODO: Navigate to help screen
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Help & Support coming soon!')),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileInfo(User user) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppTheme.spacingL),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Personal Information', style: AppTheme.heading4),
+            const SizedBox(height: AppTheme.spacingL),
+
+            _buildInfoRow('Email', user.email),
+            _buildInfoRow('Phone', user.phone),
+            _buildInfoRow('Address', user.address),
+
+            if (user is Worker) ...[
+              const SizedBox(height: AppTheme.spacingM),
+              _buildInfoRow('Skills', user.skills),
+              _buildInfoRow('Hourly Rate', '\$${user.hourlyRate}/hr'),
+              _buildInfoRow(
+                'Availability',
+                user.lookingForWork ? 'Available' : 'Busy',
+              ),
+              if (user.rating != null) ...[
+                _buildInfoRow('Rating', '${user.rating!.toStringAsFixed(1)} ⭐'),
+                if (user.totalReviews != null)
+                  _buildInfoRow('Reviews', '${user.totalReviews} reviews'),
+              ],
+            ],
+
+            const SizedBox(height: AppTheme.spacingM),
+            _buildInfoRow('Member Since', _formatDate(user.createdAt)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spacingM),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: AppTheme.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textSecondaryColor,
+              ),
+            ),
+          ),
+          Expanded(child: Text(value, style: AppTheme.bodyMedium)),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  void _showLogoutDialog(BuildContext context, AuthProvider authProvider) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Logout'),
+            content: const Text('Are you sure you want to logout?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await authProvider.logout();
+                  if (context.mounted) {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.errorColor,
+                ),
+                child: const Text('Logout'),
+              ),
+            ],
+          ),
+    );
+  }
+}

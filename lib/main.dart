@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'login_page.dart';
+import 'package:provider/provider.dart';
+import 'constants/theme.dart';
+import 'providers/auth_provider.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -8,15 +11,16 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+    return ChangeNotifierProvider(
+      create: (_) => AuthProvider(),
+      child: MaterialApp(
+        title: 'HelpMate',
+        theme: AppTheme.lightTheme,
+        home: const SplashScreen(),
+        debugShowCheckedModeBanner: false,
       ),
-      home: const LoginPage(),
     );
   }
 }

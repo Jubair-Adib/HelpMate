@@ -1,13 +1,73 @@
 import 'package:flutter/material.dart';
-import 'login_page.dart';
-import 'profile_page.dart';
+import 'package:provider/provider.dart';
+import '../constants/theme.dart';
+import '../providers/auth_provider.dart';
+import '../services/api_service.dart';
+import '../models/user.dart';
+import 'home_tabs/categories_tab.dart';
+import 'home_tabs/search_tab.dart';
+import 'home_tabs/orders_tab.dart';
+import 'profile_tab.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({Key? key}) : super(key: key);
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0;
+  late List<Widget> _tabs;
+  List<Map<String, dynamic>> _categories = [];
+  bool _isLoading = true;
+  String _search = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeTabs();
+    _fetchCategories();
+  }
+
+  void _initializeTabs() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.currentUser;
+
+    if (user is Worker) {
+      // Worker tabs
+      _tabs = [const SearchTab(), const OrdersTab(), const ProfileTab()];
+    } else {
+      // User tabs
+      _tabs = [
+        const CategoriesTab(),
+        const SearchTab(),
+        const OrdersTab(),
+        const ProfileTab(),
+      ];
+    }
+  }
+
+  Future<void> _fetchCategories() async {
+    try {
+      final categories = await ApiService().getCategories();
+      setState(() {
+        _categories = categories;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
+    final name = user?.fullName.isNotEmpty == true ? user!.fullName : 'User';
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -28,9 +88,9 @@ class HomePage extends StatelessWidget {
                           fontFamily: 'Montserrat',
                         ),
                       ),
-                      const Text(
-                        'John Doe',
-                        style: TextStyle(
+                      Text(
+                        name,
+                        style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1565C0),
@@ -44,7 +104,7 @@ class HomePage extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const ProfilePage(),
+                          builder: (context) => const ProfileTab(),
                         ),
                       );
                     },
@@ -71,7 +131,6 @@ class HomePage extends StatelessWidget {
                 ],
               ),
             ),
-
             // Search Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -88,6 +147,7 @@ class HomePage extends StatelessWidget {
                   ],
                 ),
                 child: TextField(
+                  onChanged: (val) => setState(() => _search = val),
                   decoration: InputDecoration(
                     hintText: 'Search services...',
                     hintStyle: TextStyle(
@@ -104,9 +164,7 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 30),
-
             // Categories Section
             Expanded(
               child: Padding(
@@ -125,19 +183,44 @@ class HomePage extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                     Expanded(
-                      child: GridView.builder(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                              childAspectRatio: 1.1,
-                            ),
-                        itemCount: serviceCategories.length,
-                        itemBuilder: (context, index) {
-                          return _buildCategoryCard(serviceCategories[index]);
-                        },
-                      ),
+                      child:
+                          _isLoading
+                              ? const Center(child: CircularProgressIndicator())
+                              : _categories.isEmpty
+                              ? const Center(child: Text('No categories found'))
+                              : GridView.builder(
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      crossAxisSpacing: 16,
+                                      mainAxisSpacing: 16,
+                                      childAspectRatio: 1.1,
+                                    ),
+                                itemCount:
+                                    _categories
+                                        .where(
+                                          (cat) => cat['name']
+                                              .toString()
+                                              .toLowerCase()
+                                              .contains(_search.toLowerCase()),
+                                        )
+                                        .length,
+                                itemBuilder: (context, index) {
+                                  final filtered =
+                                      _categories
+                                          .where(
+                                            (cat) => cat['name']
+                                                .toString()
+                                                .toLowerCase()
+                                                .contains(
+                                                  _search.toLowerCase(),
+                                                ),
+                                          )
+                                          .toList();
+                                  final category = filtered[index];
+                                  return _buildCategoryCard(category);
+                                },
+                              ),
                     ),
                   ],
                 ),
@@ -149,7 +232,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryCard(ServiceCategory category) {
+  Widget _buildCategoryCard(Map<String, dynamic> category) {
     return GestureDetector(
       onTap: () {
         // TODO: Navigate to category specific page
@@ -172,14 +255,18 @@ class HomePage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: category.color.withOpacity(0.1),
+                color: const Color(0xFF1565C0).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(category.icon, size: 32, color: category.color),
+              child: const Icon(
+                Icons.category,
+                size: 32,
+                color: Color(0xFF1565C0),
+              ),
             ),
             const SizedBox(height: 12),
             Text(
-              category.name,
+              category['name'] ?? '',
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -193,50 +280,3 @@ class HomePage extends StatelessWidget {
     );
   }
 }
-
-class ServiceCategory {
-  final String name;
-  final IconData icon;
-  final Color color;
-
-  ServiceCategory({
-    required this.name,
-    required this.icon,
-    required this.color,
-  });
-}
-
-final List<ServiceCategory> serviceCategories = [
-  ServiceCategory(
-    name: 'Babysitting',
-    icon: Icons.child_care,
-    color: Colors.pink,
-  ),
-  ServiceCategory(name: 'AC Repair', icon: Icons.ac_unit, color: Colors.blue),
-  ServiceCategory(name: 'Tutoring', icon: Icons.school, color: Colors.orange),
-  ServiceCategory(
-    name: 'Physician',
-    icon: Icons.medical_services,
-    color: Colors.red,
-  ),
-  ServiceCategory(
-    name: 'Cleaner',
-    icon: Icons.cleaning_services,
-    color: Colors.green,
-  ),
-  ServiceCategory(name: 'Plumber', icon: Icons.plumbing, color: Colors.indigo),
-  ServiceCategory(
-    name: 'Electrician',
-    icon: Icons.electrical_services,
-    color: Colors.amber,
-  ),
-  ServiceCategory(name: 'Carpenter', icon: Icons.handyman, color: Colors.brown),
-  ServiceCategory(name: 'Gardener', icon: Icons.eco, color: Colors.lightGreen),
-  ServiceCategory(
-    name: 'Cook',
-    icon: Icons.restaurant,
-    color: Colors.deepOrange,
-  ),
-  ServiceCategory(name: 'Driver', icon: Icons.drive_eta, color: Colors.teal),
-  ServiceCategory(name: 'Security', icon: Icons.security, color: Colors.grey),
-];
