@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import engine
-from app.models import User, Worker, WorkerOrder, Category, Service, Order, Review
-from app.routers import auth, categories, workers, services, orders
+from app.models import User, Worker, WorkerOrder, Category, Service, Order, Review, Chat, Message
+from app.routers import auth, categories, workers, services, orders, chat
 
 # Create database tables
 from app.core.database import Base
@@ -29,6 +29,7 @@ app.include_router(categories.router, prefix="/api/v1")
 app.include_router(workers.router, prefix="/api/v1")
 app.include_router(services.router, prefix="/api/v1")
 app.include_router(orders.router, prefix="/api/v1")
+app.include_router(chat.router, prefix="/api/v1")
 
 
 @app.get("/")

@@ -20,4 +20,5 @@ class User(Base):
     
     # Relationships
     orders = relationship("Order", back_populates="user")
-    reviews = relationship("Review", back_populates="user") 
+    reviews = relationship("Review", back_populates="user")
+    chats = relationship("Chat", back_populates="user") 

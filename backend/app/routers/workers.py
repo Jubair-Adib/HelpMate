@@ -3,10 +3,12 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.core.database import get_db
 from app.models.worker import Worker, WorkerOrder
+from app.models.order import Review
 from app.schemas.worker import (
     WorkerUpdate, WorkProfileUpdate, WorkerResponse, 
     WorkerOrderCreate, WorkerOrderResponse
 )
+from app.schemas.order import ReviewResponse
 from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/workers", tags=["workers"])
@@ -155,4 +157,19 @@ async def update_worker_order(
     order.status = status
     db.commit()
     db.refresh(order)
-    return order 
+    return order
+
+
+@router.get("/{worker_id}/reviews", response_model=List[ReviewResponse])
+def get_worker_reviews(worker_id: int, db: Session = Depends(get_db)):
+    """Get all reviews for a specific worker"""
+    # Check if worker exists
+    worker = db.query(Worker).filter(Worker.id == worker_id).first()
+    if not worker:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Worker not found"
+        )
+    
+    reviews = db.query(Review).filter(Review.worker_id == worker_id).all()
+    return reviews 

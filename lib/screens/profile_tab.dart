@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'login_screen.dart';
+import 'personal_info_screen.dart';
+import 'service_history_screen.dart';
 
 class ProfileTab extends StatelessWidget {
-  const ProfileTab({Key? key}) : super(key: key);
+  const ProfileTab({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +96,14 @@ class ProfileTab extends StatelessWidget {
                     icon: Icons.person_outline,
                     title: 'Personal Information',
                     subtitle: 'Edit your profile details',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PersonalInfoScreen(),
+                        ),
+                      );
+                    },
                   ),
                   _buildProfileOption(
                     icon: Icons.location_on_outlined,
@@ -112,7 +121,14 @@ class ProfileTab extends StatelessWidget {
                     icon: Icons.history,
                     title: 'Service History',
                     subtitle: 'View your past services',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ServiceHistoryScreen(),
+                        ),
+                      );
+                    },
                   ),
                   _buildProfileOption(
                     icon: Icons.favorite_outline,

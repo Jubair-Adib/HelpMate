@@ -122,7 +122,7 @@ class ApiService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$apiUrl/auth/register/user'),
+        Uri.parse('$apiUrl/v1/auth/register/user'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': email,
@@ -157,7 +157,7 @@ class ApiService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$apiUrl/auth/register/worker'),
+        Uri.parse('$apiUrl/v1/auth/register/worker'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': email,
@@ -201,7 +201,7 @@ class ApiService {
   // Workers APIs
   Future<List<Map<String, dynamic>>> getWorkers({String? categoryId}) async {
     try {
-      String endpoint = '/workers';
+      String endpoint = '/v1/workers';
       if (categoryId != null) {
         endpoint += '?category_id=$categoryId';
       }
@@ -219,7 +219,7 @@ class ApiService {
 
   Future<Map<String, dynamic>> getWorkerProfile(int workerId) async {
     try {
-      final response = await _get('/workers/$workerId');
+      final response = await _get('/v1/workers/$workerId');
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -238,7 +238,7 @@ class ApiService {
       final userId = prefs.getInt(userIdKey);
       if (userId == null) throw Exception('User not authenticated');
 
-      final response = await _put('/workers/$userId', data);
+      final response = await _put('/v1/workers/$userId', data);
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -252,7 +252,7 @@ class ApiService {
   // Services APIs
   Future<List<Map<String, dynamic>>> getServices({int? workerId}) async {
     try {
-      String endpoint = '/services';
+      String endpoint = '/v1/services';
       if (workerId != null) {
         endpoint += '?worker_id=$workerId';
       }
@@ -270,7 +270,7 @@ class ApiService {
 
   Future<Map<String, dynamic>> createService(Map<String, dynamic> data) async {
     try {
-      final response = await _post('/services', data);
+      final response = await _post('/v1/services', data);
       if (response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
@@ -286,7 +286,7 @@ class ApiService {
     Map<String, dynamic> data,
   ) async {
     try {
-      final response = await _put('/services/$serviceId', data);
+      final response = await _put('/v1/services/$serviceId', data);
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -299,7 +299,7 @@ class ApiService {
 
   Future<void> deleteService(int serviceId) async {
     try {
-      final response = await _delete('/services/$serviceId');
+      final response = await _delete('/v1/services/$serviceId');
       if (response.statusCode != 204) {
         throw Exception('Failed to delete service: ${response.body}');
       }
@@ -311,7 +311,7 @@ class ApiService {
   // Orders APIs
   Future<List<Map<String, dynamic>>> getOrders({String? status}) async {
     try {
-      String endpoint = '/orders';
+      String endpoint = '/v1/orders';
       if (status != null) {
         endpoint += '?status=$status';
       }
@@ -329,7 +329,7 @@ class ApiService {
 
   Future<Map<String, dynamic>> createOrder(Map<String, dynamic> data) async {
     try {
-      final response = await _post('/orders', data);
+      final response = await _post('/v1/orders', data);
       if (response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
@@ -345,7 +345,7 @@ class ApiService {
     String status,
   ) async {
     try {
-      final response = await _put('/orders/$orderId/status', {
+      final response = await _put('/v1/orders/$orderId/status', {
         'status': status,
       });
       if (response.statusCode == 200) {
@@ -361,7 +361,7 @@ class ApiService {
   // Reviews APIs
   Future<List<Map<String, dynamic>>> getWorkerReviews(int workerId) async {
     try {
-      final response = await _get('/workers/$workerId/reviews');
+      final response = await _get('/v1/workers/$workerId/reviews');
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.cast<Map<String, dynamic>>();
@@ -375,11 +375,110 @@ class ApiService {
 
   Future<Map<String, dynamic>> createReview(Map<String, dynamic> data) async {
     try {
-      final response = await _post('/reviews', data);
+      final response = await _post('/v1/reviews', data);
       if (response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
         throw Exception('Failed to create review: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // User Profile APIs
+  Future<Map<String, dynamic>> getUserProfile() async {
+    try {
+      final response = await _get('/v1/auth/user/profile');
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to fetch user profile: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> updateUserProfile(
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final response = await _put('/v1/auth/user/profile', data);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to update user profile: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Chat APIs
+  Future<Map<String, dynamic>> createChat(int workerId) async {
+    try {
+      final response = await _post('/v1/chat', {'worker_id': workerId});
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to create chat: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getUserChats() async {
+    try {
+      final response = await _get('/v1/chat');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to fetch chats: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getChat(int chatId) async {
+    try {
+      final response = await _get('/v1/chat/$chatId');
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to fetch chat: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getChatMessages(int chatId) async {
+    try {
+      final response = await _get('/v1/chat/$chatId/messages');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to fetch messages: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> sendMessage(int chatId, String content) async {
+    try {
+      final response = await _post('/v1/chat/$chatId/messages', {
+        'content': content,
+      });
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to send message: ${response.body}');
       }
     } catch (e) {
       throw Exception('Network error: $e');

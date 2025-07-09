@@ -5,7 +5,7 @@ from app.core.database import get_db
 from app.core.security import verify_password, get_password_hash, create_access_token, verify_token
 from app.models.user import User
 from app.models.worker import Worker
-from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
+from app.schemas.user import UserCreate, UserLogin, UserResponse, Token, UserUpdate
 from app.schemas.worker import WorkerCreate, WorkerLogin, WorkerResponse
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -149,4 +149,37 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
             raise credentials_exception
         return worker
     else:
-        raise credentials_exception 
+        raise credentials_exception
+
+
+@router.get("/user/profile", response_model=UserResponse)
+async def get_user_profile(current_user: User = Depends(get_current_user)):
+    """Get current user's profile"""
+    if not isinstance(current_user, User):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only users can access this endpoint"
+        )
+    return current_user
+
+
+@router.put("/user/profile", response_model=UserResponse)
+async def update_user_profile(
+    user_update: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update user's profile"""
+    if not isinstance(current_user, User):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only users can access this endpoint"
+        )
+    
+    # Update user fields
+    for field, value in user_update.dict(exclude_unset=True).items():
+        setattr(current_user, field, value)
+    
+    db.commit()
+    db.refresh(current_user)
+    return current_user 

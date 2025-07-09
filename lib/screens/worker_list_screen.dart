@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../constants/theme.dart';
 import '../services/api_service.dart';
 import '../models/category.dart';
-import '../models/user.dart';
 import 'worker_detail_screen.dart';
 
 class WorkerListScreen extends StatefulWidget {
@@ -16,7 +15,7 @@ class WorkerListScreen extends StatefulWidget {
 
 class _WorkerListScreenState extends State<WorkerListScreen> {
   final ApiService _apiService = ApiService();
-  List<Worker> _workers = [];
+  List<Map<String, dynamic>> _workers = [];
   bool _isLoading = true;
   String? _error;
 
@@ -33,11 +32,9 @@ class _WorkerListScreenState extends State<WorkerListScreen> {
         _error = null;
       });
 
-      final workersData = await _apiService.getWorkers(
+      final workers = await _apiService.getWorkers(
         categoryId: widget.category.id.toString(),
       );
-      final workers = workersData.map((json) => Worker.fromJson(json)).toList();
-
       setState(() {
         _workers = workers;
         _isLoading = false;
@@ -68,7 +65,11 @@ class _WorkerListScreenState extends State<WorkerListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor),
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: AppTheme.textSecondaryColor,
+            ),
             const SizedBox(height: AppTheme.spacingM),
             Text('Error loading workers', style: AppTheme.heading4),
             const SizedBox(height: AppTheme.spacingS),
@@ -77,7 +78,7 @@ class _WorkerListScreenState extends State<WorkerListScreen> {
               style: AppTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppTheme.spacingL),
+            const SizedBox(height: AppTheme.spacingM),
             ElevatedButton(onPressed: _loadWorkers, child: const Text('Retry')),
           ],
         ),
@@ -107,116 +108,99 @@ class _WorkerListScreenState extends State<WorkerListScreen> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadWorkers,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(AppTheme.spacingL),
-        itemCount: _workers.length,
-        itemBuilder: (context, index) {
-          final worker = _workers[index];
-          return _buildWorkerCard(worker);
-        },
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.all(AppTheme.spacingL),
+      itemCount: _workers.length,
+      itemBuilder: (context, index) {
+        final worker = _workers[index];
+        return _buildWorkerCard(worker);
+      },
     );
   }
 
-  Widget _buildWorkerCard(Worker worker) {
+  Widget _buildWorkerCard(Map<String, dynamic> worker) {
     return Card(
       margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => WorkerDetailScreen(worker: worker),
+              builder:
+                  (_) => WorkerDetailScreen(worker: worker, isDummy: false),
             ),
           );
         },
-        borderRadius: BorderRadius.circular(AppTheme.radiusL),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacingM),
+          padding: const EdgeInsets.all(18.0),
           child: Row(
             children: [
               // Worker Avatar
               CircleAvatar(
-                radius: 30,
+                radius: 32,
                 backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
                 child: Text(
-                  worker.fullName.split(' ').map((e) => e[0]).join(''),
-                  style: AppTheme.heading4.copyWith(
+                  worker['full_name']?.split(' ').map((e) => e[0]).join('') ??
+                      'W',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                     color: AppTheme.primaryColor,
                   ),
                 ),
               ),
-              const SizedBox(width: AppTheme.spacingM),
+              const SizedBox(width: 18),
 
               // Worker Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(worker.fullName, style: AppTheme.heading4),
-                    const SizedBox(height: AppTheme.spacingXS),
                     Text(
-                      worker.skills,
-                      style: AppTheme.bodyMedium,
+                      worker['full_name'] ?? 'Unknown Worker',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      worker['skills'] != null
+                          ? (worker['skills'] as List).join(', ')
+                          : 'No skills listed',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: AppTheme.spacingS),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(
-                          Icons.star,
-                          size: 16,
-                          color: AppTheme.warningColor,
-                        ),
-                        const SizedBox(width: AppTheme.spacingXS),
+                        Icon(Icons.star, size: 16, color: Colors.amber),
+                        const SizedBox(width: 4),
                         Text(
-                          worker.rating?.toStringAsFixed(1) ?? 'No rating',
-                          style: AppTheme.bodySmall,
+                          (worker['rating'] ?? 0.0).toString(),
+                          style: TextStyle(fontSize: 14),
                         ),
-                        if (worker.totalReviews != null) ...[
-                          Text(
-                            ' (${worker.totalReviews} reviews)',
-                            style: AppTheme.bodySmall,
+                        Text(
+                          ' (${worker['total_reviews'] ?? 0} reviews)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
                           ),
-                        ],
+                        ),
                         const Spacer(),
                         Text(
-                          '\$${worker.hourlyRate}/hr',
-                          style: AppTheme.bodyMedium.copyWith(
+                          '\$${worker['hourly_rate'] ?? 0}/hr',
+                          style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.primaryColor,
+                            color: Theme.of(context).primaryColor,
                           ),
                         ),
                       ],
                     ),
                   ],
-                ),
-              ),
-
-              // Availability Status
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacingS,
-                  vertical: AppTheme.spacingXS,
-                ),
-                decoration: BoxDecoration(
-                  color:
-                      worker.lookingForWork
-                          ? AppTheme.successColor.withOpacity(0.1)
-                          : AppTheme.errorColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusS),
-                ),
-                child: Text(
-                  worker.lookingForWork ? 'Available' : 'Busy',
-                  style: AppTheme.caption.copyWith(
-                    color:
-                        worker.lookingForWork
-                            ? AppTheme.successColor
-                            : AppTheme.errorColor,
-                    fontWeight: FontWeight.w600,
-                  ),
                 ),
               ),
             ],

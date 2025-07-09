@@ -34,6 +34,7 @@ class Worker(Base):
     orders_received = relationship("Order", back_populates="worker")
     orders_placed = relationship("WorkerOrder", back_populates="worker")
     reviews_received = relationship("Review", back_populates="worker")
+    chats = relationship("Chat", back_populates="worker")
 
 
 class WorkerOrder(Base):

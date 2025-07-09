@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../models/user.dart';
 
@@ -165,6 +164,28 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       _setError(e.toString());
       _setLoading(false);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Refresh user profile from backend
+  Future<bool> refreshUserProfile() async {
+    if (_currentUser == null) return false;
+
+    try {
+      final userProfile = await _apiService.getUserProfile();
+
+      if (_currentUser is Worker) {
+        _currentUser = Worker.fromJson(userProfile);
+      } else {
+        _currentUser = User.fromJson(userProfile);
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError(e.toString());
       notifyListeners();
       return false;
     }

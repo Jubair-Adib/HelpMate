@@ -4,6 +4,7 @@ from .worker import Worker, WorkerOrder
 from .category import Category
 from .service import Service
 from .order import Order, Review
+from .chat import Chat, Message
 
 # Export all models
 __all__ = [

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../constants/theme.dart';
-import '../providers/auth_provider.dart';
 import 'login_screen.dart';
-import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -37,24 +34,26 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
             // App Logo/Icon
             Container(
-              width: 120,
-              height: 120,
+              width: 140,
+              height: 140,
               decoration: BoxDecoration(
                 color: AppTheme.surfaceColor,
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: AppTheme.shadowLarge,
               ),
-              child: Icon(
-                Icons.home_repair_service,
-                size: 60,
-                color: AppTheme.primaryColor,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Image.asset(
+                  'assets/images/helpmate_logo.png',
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
             const SizedBox(height: AppTheme.spacingXL),
 
             // App Name
             Text(
-              'Home Service',
+              'HelpMate',
               style: AppTheme.heading1.copyWith(
                 color: AppTheme.surfaceColor,
                 fontWeight: FontWeight.bold,

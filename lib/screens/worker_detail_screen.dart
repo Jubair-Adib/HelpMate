@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import '../constants/theme.dart';
-import '../models/user.dart';
 import '../services/api_service.dart';
+import 'chat_screen.dart';
 
 class WorkerDetailScreen extends StatefulWidget {
-  final Worker worker;
+  final dynamic worker;
+  final bool isDummy;
 
-  const WorkerDetailScreen({super.key, required this.worker});
+  const WorkerDetailScreen({
+    super.key,
+    required this.worker,
+    this.isDummy = false,
+  });
 
   @override
   State<WorkerDetailScreen> createState() => _WorkerDetailScreenState();
@@ -25,7 +30,9 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
 
   Future<void> _loadReviews() async {
     try {
-      final reviewsData = await _apiService.getWorkerReviews(widget.worker.id);
+      final workerId =
+          widget.isDummy ? widget.worker['id'] : widget.worker['id'];
+      final reviewsData = await _apiService.getWorkerReviews(workerId);
       setState(() {
         _reviews = reviewsData;
         _isLoadingReviews = false;
@@ -40,14 +47,25 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.worker.fullName), elevation: 0),
+      appBar: AppBar(
+        title: Text(
+          widget.isDummy
+              ? widget.worker['name']
+              : widget.worker['full_name'] ?? 'Worker',
+        ),
+        elevation: 0,
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [_buildHeader(), _buildInfo(), _buildReviews()],
+          children: [
+            _buildHeader(),
+            _buildInfo(),
+            if (!widget.isDummy) _buildReviews(),
+            _buildActionButtons(),
+          ],
         ),
       ),
-      bottomNavigationBar: _buildBottomBar(),
     );
   }
 
@@ -61,32 +79,47 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
           CircleAvatar(
             radius: 50,
             backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-            child: Text(
-              widget.worker.fullName.split(' ').map((e) => e[0]).join(''),
-              style: AppTheme.heading1.copyWith(color: AppTheme.primaryColor),
-            ),
+            backgroundImage:
+                widget.isDummy ? NetworkImage(widget.worker['avatar']) : null,
+            child:
+                widget.isDummy
+                    ? null
+                    : Text(
+                      (widget.worker['full_name'] ?? 'Worker')
+                          .split(' ')
+                          .map((e) => e[0])
+                          .join(''),
+                      style: AppTheme.heading1.copyWith(
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
           ),
           const SizedBox(height: AppTheme.spacingM),
 
           // Name
-          Text(widget.worker.fullName, style: AppTheme.heading2),
+          Text(
+            widget.isDummy
+                ? widget.worker['name']
+                : widget.worker['full_name'] ?? 'Worker',
+            style: AppTheme.heading2,
+          ),
           const SizedBox(height: AppTheme.spacingS),
 
           // Rating
-          if (widget.worker.rating != null) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.star, color: AppTheme.warningColor, size: 20),
-                const SizedBox(width: AppTheme.spacingXS),
-                Text(
-                  '${widget.worker.rating!.toStringAsFixed(1)} (${widget.worker.totalReviews ?? 0} reviews)',
-                  style: AppTheme.bodyMedium,
-                ),
-              ],
-            ),
-            const SizedBox(height: AppTheme.spacingS),
-          ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.star, color: AppTheme.warningColor, size: 20),
+              const SizedBox(width: AppTheme.spacingXS),
+              Text(
+                widget.isDummy
+                    ? '${widget.worker['rating']} (${widget.worker['reviews']} reviews)'
+                    : '${(widget.worker['rating'] ?? 0.0).toStringAsFixed(1)} (${widget.worker['total_reviews'] ?? 0} reviews)',
+                style: AppTheme.bodyMedium,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spacingS),
 
           // Availability
           Container(
@@ -95,21 +128,13 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
               vertical: AppTheme.spacingS,
             ),
             decoration: BoxDecoration(
-              color:
-                  widget.worker.lookingForWork
-                      ? AppTheme.successColor.withOpacity(0.1)
-                      : AppTheme.errorColor.withOpacity(0.1),
+              color: AppTheme.successColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(AppTheme.radiusM),
             ),
             child: Text(
-              widget.worker.lookingForWork
-                  ? 'Available for Work'
-                  : 'Currently Busy',
+              'Available for Work',
               style: AppTheme.bodyMedium.copyWith(
-                color:
-                    widget.worker.lookingForWork
-                        ? AppTheme.successColor
-                        : AppTheme.errorColor,
+                color: AppTheme.successColor,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -127,12 +152,38 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
         children: [
           Text('Professional Information', style: AppTheme.heading4),
           const SizedBox(height: AppTheme.spacingM),
-
-          _buildInfoRow('Skills', widget.worker.skills),
-          _buildInfoRow('Hourly Rate', '\$${widget.worker.hourlyRate}/hr'),
-          _buildInfoRow('Location', widget.worker.address),
-          _buildInfoRow('Phone', widget.worker.phone),
-          _buildInfoRow('Member Since', _formatDate(widget.worker.createdAt)),
+          _buildInfoRow(
+            'Skills',
+            widget.isDummy
+                ? widget.worker['skills']
+                : (widget.worker['skills'] != null
+                    ? (widget.worker['skills'] as List).join(', ')
+                    : 'No skills listed'),
+          ),
+          _buildInfoRow(
+            'Hourly Rate',
+            widget.isDummy
+                ? '\$${widget.worker['hourlyRate']}/hr'
+                : '\$${widget.worker['hourly_rate'] ?? 0}/hr',
+          ),
+          _buildInfoRow(
+            'Location',
+            widget.isDummy
+                ? widget.worker['address']
+                : widget.worker['address'] ?? 'Not specified',
+          ),
+          _buildInfoRow(
+            'Phone',
+            widget.isDummy
+                ? widget.worker['phone']
+                : widget.worker['phone_number'] ?? 'Not specified',
+          ),
+          _buildInfoRow(
+            'Member Since',
+            widget.isDummy
+                ? widget.worker['since']
+                : _formatDate(DateTime.parse(widget.worker['created_at'])),
+          ),
         ],
       ),
     );
@@ -263,52 +314,164 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
     );
   }
 
-  Widget _buildBottomBar() {
-    return Container(
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Widget _buildActionButtons() {
+    return Padding(
       padding: const EdgeInsets.all(AppTheme.spacingL),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        boxShadow: AppTheme.shadowSmall,
-      ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Hourly Rate', style: AppTheme.bodySmall),
-                Text(
-                  '\$${widget.worker.hourlyRate}/hr',
-                  style: AppTheme.heading4.copyWith(
-                    color: AppTheme.primaryColor,
+          Text('Actions', style: AppTheme.heading4),
+          const SizedBox(height: AppTheme.spacingM),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _showHireDialog(),
+                  icon: const Icon(Icons.work),
+                  label: const Text('Hire Now'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppTheme.spacingM,
+                    ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          ElevatedButton(
-            onPressed:
-                widget.worker.lookingForWork
-                    ? () {
-                      // TODO: Navigate to booking screen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Booking ${widget.worker.fullName}'),
-                        ),
-                      );
-                    }
-                    : null,
-            child: Text(
-              widget.worker.lookingForWork ? 'Book Now' : 'Not Available',
-            ),
+              ),
+              const SizedBox(width: AppTheme.spacingM),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _startChat(),
+                  icon: const Icon(Icons.chat),
+                  label: const Text('Chat'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.primaryColor,
+                    side: BorderSide(color: AppTheme.primaryColor),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppTheme.spacingM,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+  void _showHireDialog() {
+    final TextEditingController descriptionController = TextEditingController();
+    final TextEditingController hoursController = TextEditingController(
+      text: '1',
+    );
+    final TextEditingController dateController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Hire Worker'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    hintText: 'Describe what you need...',
+                  ),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: AppTheme.spacingS),
+                TextField(
+                  controller: hoursController,
+                  decoration: const InputDecoration(
+                    labelText: 'Hours',
+                    hintText: 'Number of hours',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: AppTheme.spacingS),
+                TextField(
+                  controller: dateController,
+                  decoration: const InputDecoration(
+                    labelText: 'Scheduled Date',
+                    hintText: 'YYYY-MM-DD HH:MM',
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    final workerId =
+                        widget.isDummy
+                            ? widget.worker['id']
+                            : widget.worker['id'];
+                    final serviceId =
+                        1; // Default service ID, you might want to get this from the worker's services
+
+                    await _apiService.createOrder({
+                      'service_id': serviceId,
+                      'description': descriptionController.text,
+                      'hours': int.tryParse(hoursController.text) ?? 1,
+                      'scheduled_date':
+                          dateController.text.isNotEmpty
+                              ? dateController.text
+                              : null,
+                    });
+
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Order created successfully!'),
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                },
+                child: const Text('Hire'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _startChat() async {
+    try {
+      final workerId =
+          widget.isDummy ? widget.worker['id'] : widget.worker['id'];
+      final chat = await _apiService.createChat(workerId);
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder:
+              (_) => ChatScreen(
+                chatId: chat['id'],
+                workerName:
+                    widget.isDummy
+                        ? widget.worker['name']
+                        : widget.worker['full_name'],
+              ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
   }
 }
