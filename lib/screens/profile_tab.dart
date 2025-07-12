@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import 'login_screen.dart';
 import 'personal_info_screen.dart';
 import 'service_history_screen.dart';
+import 'about_screen.dart';
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key});
@@ -158,7 +159,11 @@ class ProfileTab extends StatelessWidget {
                     icon: Icons.info_outline,
                     title: 'About HelpMate',
                     subtitle: 'Learn more about the app',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const AboutScreen()),
+                      );
+                    },
                   ),
                 ],
               ),

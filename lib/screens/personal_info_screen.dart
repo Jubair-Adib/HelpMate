@@ -55,7 +55,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       setState(() {
         _nameController.text = userProfile['full_name'] ?? '';
         _emailController.text = userProfile['email'] ?? '';
-        _phoneController.text = userProfile['phone_number'] ?? '';
+        _phoneController.text = userProfile['phone'] ?? '';
         _addressController.text = userProfile['address'] ?? '';
         _isLoading = false;
       });

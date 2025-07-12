@@ -22,9 +22,9 @@ class User {
       id: json['id'],
       email: json['email'],
       fullName: json['full_name'],
-      phone: json['phone'],
-      address: json['address'],
-      userType: json['user_type'],
+      phone: json['phone_number'] ?? '',
+      address: json['address'] ?? '',
+      userType: json['user_type'] ?? 'user',
       createdAt: DateTime.parse(json['created_at']),
     );
   }
@@ -34,7 +34,7 @@ class User {
       'id': id,
       'email': email,
       'full_name': fullName,
-      'phone': phone,
+      'phone_number': phone,
       'address': address,
       'user_type': userType,
       'created_at': createdAt.toIso8601String(),

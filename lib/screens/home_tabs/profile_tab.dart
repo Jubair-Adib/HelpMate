@@ -5,6 +5,139 @@ import '../../providers/auth_provider.dart';
 import '../../models/user.dart';
 import '../edit_profile_screen.dart';
 import '../login_screen.dart';
+import 'package:flutter/services.dart';
+
+class AboutHelpmateScreen extends StatelessWidget {
+  const AboutHelpmateScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('About Helpmate'), elevation: 0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // App Logo
+            Center(
+              child: CircleAvatar(
+                radius: 48,
+                backgroundColor: Colors.white,
+                backgroundImage: AssetImage('assets/images/helpmate_logo.png'),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // App Description
+            const Text(
+              'Helpmate is your trusted platform for finding and hiring reliable service providers for your everyday needs. Whether you need a babysitter, cleaner, tutor, or more, Helpmate connects you with skilled professionals quickly and securely.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, height: 1.5),
+            ),
+            const SizedBox(height: 24),
+            // Presented by
+            const Text(
+              'Presented by Team Mechabytes',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Color(0xFF1565C0),
+              ),
+            ),
+            const SizedBox(height: 32),
+            // About our team
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'About our team',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  color: Color(0xFF1565C0),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Team member cards
+            Column(children: List.generate(4, (index) => _TeamMemberCard())),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TeamMemberCard extends StatelessWidget {
+  const _TeamMemberCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 20),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Placeholder for photo
+            CircleAvatar(
+              radius: 32,
+              backgroundColor: Colors.grey[300],
+              backgroundImage: null, // Replace with AssetImage or NetworkImage
+              child: const Icon(Icons.person, size: 32, color: Colors.white),
+            ),
+            const SizedBox(width: 20),
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'Full Name',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'University Name',
+                    style: TextStyle(fontSize: 14, color: Colors.black54),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'email@example.com',
+                    style: TextStyle(fontSize: 14, color: Colors.black54),
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.code, size: 18, color: Colors.black45),
+                      SizedBox(width: 6),
+                      Text(
+                        'github.com/username',
+                        style: TextStyle(fontSize: 13, color: Colors.black87),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.business, size: 18, color: Colors.black45),
+                      SizedBox(width: 6),
+                      Text(
+                        'linkedin.com/in/username',
+                        style: TextStyle(fontSize: 13, color: Colors.black87),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key});
@@ -144,9 +277,8 @@ class ProfileTab extends StatelessWidget {
             title: const Text('Help & Support'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              // TODO: Navigate to help screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Help & Support coming soon!')),
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AboutHelpmateScreen()),
               );
             },
           ),

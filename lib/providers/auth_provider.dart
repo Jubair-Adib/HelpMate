@@ -37,16 +37,9 @@ class AuthProvider extends ChangeNotifier {
     try {
       final response = await _apiService.login(email, password);
 
-      // Set _currentUser to a valid User object so HomeScreen can render
-      _currentUser = User(
-        id: response['user_id'],
-        email: email,
-        fullName: '', // You can fetch the full profile later if needed
-        phone: '',
-        address: '',
-        userType: response['user_type'] ?? '',
-        createdAt: DateTime.now(),
-      );
+      // Fetch full user profile after login
+      final userProfile = await _apiService.getUserProfile();
+      _currentUser = User.fromJson(userProfile);
 
       _setLoading(false);
       notifyListeners();

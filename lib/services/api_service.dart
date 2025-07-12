@@ -329,7 +329,10 @@ class ApiService {
 
   Future<Map<String, dynamic>> createOrder(Map<String, dynamic> data) async {
     try {
-      final response = await _post('/v1/orders', data);
+      final response = await _post(
+        '/v1/orders/',
+        data,
+      ); // <-- Added trailing slash
       if (response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
@@ -418,7 +421,7 @@ class ApiService {
   // Chat APIs
   Future<Map<String, dynamic>> createChat(int workerId) async {
     try {
-      final response = await _post('/v1/chat', {'worker_id': workerId});
+      final response = await _post('/v1/chat/', {'worker_id': workerId});
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
