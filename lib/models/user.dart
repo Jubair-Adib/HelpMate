@@ -6,6 +6,7 @@ class User {
   final String address;
   final String userType;
   final DateTime createdAt;
+  final bool isAdmin;
 
   User({
     required this.id,
@@ -15,6 +16,7 @@ class User {
     required this.address,
     required this.userType,
     required this.createdAt,
+    this.isAdmin = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class User {
       address: json['address'] ?? '',
       userType: json['user_type'] ?? 'user',
       createdAt: DateTime.parse(json['created_at']),
+      isAdmin: json['is_admin'] ?? false,
     );
   }
 
@@ -57,6 +60,7 @@ class Worker extends User {
     required super.address,
     required super.userType,
     required super.createdAt,
+    super.isAdmin = false,
     required this.skills,
     required this.hourlyRate,
     required this.lookingForWork,
@@ -73,6 +77,7 @@ class Worker extends User {
       address: json['address'],
       userType: json['user_type'],
       createdAt: DateTime.parse(json['created_at']),
+      isAdmin: json['is_admin'] ?? false,
       skills: json['skills'],
       hourlyRate: json['hourly_rate'].toDouble(),
       lookingForWork: json['looking_for_work'],

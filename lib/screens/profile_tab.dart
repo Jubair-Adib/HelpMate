@@ -8,6 +8,7 @@ import 'about_screen.dart';
 import 'favourites_screen.dart';
 import 'help_support_screen.dart';
 import 'privacy_security_screen.dart';
+import 'admin_panel_screen.dart';
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key});
@@ -96,6 +97,20 @@ class ProfileTab extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
+                  if (user?.isAdmin == true)
+                    _buildProfileOption(
+                      icon: Icons.admin_panel_settings,
+                      title: 'Admin Panel',
+                      subtitle: 'Manage categories, users, workers, orders',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AdminPanelScreen(),
+                          ),
+                        );
+                      },
+                    ),
                   _buildProfileOption(
                     icon: Icons.person_outline,
                     title: 'Personal Information',

@@ -563,4 +563,125 @@ class ApiService {
       throw Exception('Network error: $e');
     }
   }
+
+  // Admin: Create Category
+  Future<Map<String, dynamic>> createAdminCategory(
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final response = await _post('/v1/admin/categories', data);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to create category: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Admin: Get All Categories
+  Future<List<Map<String, dynamic>>> getAdminCategories() async {
+    try {
+      final response = await _get('/v1/admin/categories');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to fetch categories: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Admin: Get all users
+  Future<List<Map<String, dynamic>>> getAdminUsers() async {
+    try {
+      final response = await _get('/v1/admin/users');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to fetch users: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Admin: Activate/Deactivate user
+  Future<void> setUserActive(int userId, bool active) async {
+    try {
+      final response = await _put(
+        '/v1/admin/users/$userId/activate?active=$active',
+        {},
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update user status: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Admin: Get all workers
+  Future<List<Map<String, dynamic>>> getAdminWorkers() async {
+    try {
+      final response = await _get('/v1/admin/workers');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to fetch workers: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Admin: Activate/Deactivate worker
+  Future<void> setWorkerActive(int workerId, bool active) async {
+    try {
+      final response = await _put(
+        '/v1/admin/workers/$workerId/activate?active=$active',
+        {},
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update worker status: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Admin: Get all orders
+  Future<List<Map<String, dynamic>>> getAdminOrders() async {
+    try {
+      final response = await _get('/v1/admin/orders');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to fetch orders: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Admin: Change order status
+  Future<void> setOrderStatus(int orderId, String status) async {
+    try {
+      final response = await _put(
+        '/v1/admin/orders/$orderId/status?status=$status',
+        {},
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update order status: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
 }

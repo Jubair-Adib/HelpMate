@@ -81,5 +81,23 @@ def migrate_database():
     finally:
         conn.close()
 
+def add_is_admin_column(engine):
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        # Check if column already exists
+        result = conn.execute(text("""
+            PRAGMA table_info(users)
+        """))
+        columns = [row[1] for row in result]
+        if 'is_admin' not in columns:
+            conn.execute(text("""
+                ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0
+            """))
+            print("Added is_admin column to users table.")
+        else:
+            print("is_admin column already exists.")
+
 if __name__ == "__main__":
+    from app.core.database import engine
+    add_is_admin_column(engine)
     migrate_database() 
