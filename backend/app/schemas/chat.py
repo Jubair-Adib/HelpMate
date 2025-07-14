@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from .user import UserResponse
 from .worker import WorkerResponse
 
@@ -23,6 +23,9 @@ class MessageResponse(MessageBase):
     
     class Config:
         from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+        }
 
 
 class ChatBase(BaseModel):
@@ -45,6 +48,9 @@ class ChatResponse(ChatBase):
     
     class Config:
         from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+        }
 
 
 class ChatListResponse(BaseModel):
@@ -60,4 +66,7 @@ class ChatListResponse(BaseModel):
     unread_count: int = 0
     
     class Config:
-        from_attributes = True 
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+        } 

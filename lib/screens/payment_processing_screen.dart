@@ -123,17 +123,19 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
       barrierDismissible: false,
       builder:
           (context) => AlertDialog(
-            title: Row(
+            title: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.check_circle,
                   color: AppTheme.successColor,
-                  size: 28,
+                  size: 40,
                 ),
-                const SizedBox(width: AppTheme.spacingS),
-                const Text('Payment Successful!'),
+                const SizedBox(height: AppTheme.spacingS),
+                const Text('Payment Successful!', textAlign: TextAlign.center),
               ],
             ),
+            contentPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,

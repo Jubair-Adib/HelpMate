@@ -1,14 +1,44 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict, Set
 from app.core.database import get_db
 from app.models.chat import Chat, Message
 from app.models.user import User
 from app.models.worker import Worker
 from app.schemas.chat import ChatCreate, ChatResponse, MessageCreate, MessageResponse, ChatListResponse
 from app.routers.auth import get_current_user
+import asyncio
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+# In-memory mapping of chat_id to set of WebSocket connections
+active_connections: Dict[int, Set[WebSocket]] = {}
+
+async def broadcast_message(chat_id: int, message: dict):
+    connections = active_connections.get(chat_id, set())
+    to_remove = set()
+    for ws in connections:
+        try:
+            await ws.send_json(message)
+        except Exception:
+            to_remove.add(ws)
+    for ws in to_remove:
+        connections.discard(ws)
+
+@router.websocket("/ws/chat/{chat_id}")
+async def websocket_chat(websocket: WebSocket, chat_id: int):
+    await websocket.accept()
+    if chat_id not in active_connections:
+        active_connections[chat_id] = set()
+    active_connections[chat_id].add(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()  # Just keep alive, no direct send from client
+            await asyncio.sleep(0.1)
+    except WebSocketDisconnect:
+        active_connections[chat_id].discard(websocket)
+        if not active_connections[chat_id]:
+            del active_connections[chat_id]
 
 
 @router.post("/", response_model=ChatResponse)
@@ -165,6 +195,8 @@ async def send_message(
     db.add(db_message)
     db.commit()
     db.refresh(db_message)
+    # Broadcast to WebSocket
+    await broadcast_message(chat_id, MessageResponse.from_orm(db_message).dict())
     return db_message
 
 
@@ -285,6 +317,8 @@ async def send_worker_message(
     db.add(db_message)
     db.commit()
     db.refresh(db_message)
+    # Broadcast to WebSocket
+    await broadcast_message(chat_id, MessageResponse.from_orm(db_message).dict())
     return db_message
 
 
