@@ -11,9 +11,9 @@ def create_admin():
     # Check if admin already exists
     existing = db.query(User).filter(User.email == email).first()
     if existing:
-        # These assignments are correct for SQLAlchemy ORM models
-        existing.hashed_password = hashed_password
-        existing.is_admin = True
+        # Update values using SQLAlchemy ORM setattr
+        setattr(existing, "hashed_password", hashed_password)
+        setattr(existing, "is_admin", True)
         db.commit()
         print("Admin user already exists. Password updated to 'admin123'.")
         return

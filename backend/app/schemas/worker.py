@@ -8,6 +8,7 @@ class WorkerBase(BaseModel):
     full_name: str
     phone_number: Optional[str] = None
     address: Optional[str] = None
+    image: Optional[str] = None  # Optional profile image
 
 
 class WorkerCreate(WorkerBase):
@@ -17,12 +18,14 @@ class WorkerCreate(WorkerBase):
     hourly_rate: Optional[float] = None
     experience_years: Optional[int] = None
     is_available: bool = True
+    category_id: Optional[int] = None  # Added for worker registration
 
 
 class WorkerUpdate(BaseModel):
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
     address: Optional[str] = None
+    image: Optional[str] = None  # Optional profile image
 
 
 class WorkProfileUpdate(BaseModel):
@@ -74,3 +77,9 @@ class WorkerOrderResponse(BaseModel):
     
     class Config:
         from_attributes = True 
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+    confirm_password: str 

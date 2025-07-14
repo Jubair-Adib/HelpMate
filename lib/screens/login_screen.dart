@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  String _userType = 'user'; // 'user' or 'worker'
 
   @override
   void dispose() {
@@ -32,6 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final success = await authProvider.login(
       _emailController.text.trim(),
       _passwordController.text,
+      userType: _userType,
     );
 
     if (!mounted) return;
@@ -74,6 +76,32 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // User type toggle
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ChoiceChip(
+                            label: const Text('User/Admin'),
+                            selected: _userType == 'user',
+                            onSelected: (selected) {
+                              setState(() {
+                                _userType = 'user';
+                              });
+                            },
+                          ),
+                          const SizedBox(width: 12),
+                          ChoiceChip(
+                            label: const Text('Worker'),
+                            selected: _userType == 'worker',
+                            onSelected: (selected) {
+                              setState(() {
+                                _userType = 'worker';
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
                       // Logo
                       Center(
                         child: Container(

@@ -1,12 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants/theme.dart';
 import '../providers/auth_provider.dart';
 import '../models/user.dart' as user_models;
 import '../models/worker.dart';
+import 'package:image_picker/image_picker.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  final user_models.User user;
+  final Object user;
 
   const EditProfileScreen({super.key, required this.user});
 
@@ -23,14 +25,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _hourlyRateController;
 
   bool _isAvailable = false;
+  String? _imagePath;
+  File? _imageFile;
 
   @override
   void initState() {
     super.initState();
-    _fullNameController = TextEditingController(text: widget.user.fullName);
-    _phoneController = TextEditingController(text: widget.user.phone);
-    _addressController = TextEditingController(text: widget.user.address);
-
+    _fullNameController = TextEditingController(
+      text: (widget.user as dynamic).fullName,
+    );
+    _phoneController = TextEditingController(
+      text:
+          (widget.user as dynamic).phone ??
+          (widget.user as dynamic).phoneNumber ??
+          '',
+    );
+    _addressController = TextEditingController(
+      text: (widget.user as dynamic).address ?? '',
+    );
+    // Use image field if present, else null
+    _imagePath = (widget.user as dynamic).image ?? null;
     if (widget.user is Worker) {
       final worker = widget.user as Worker;
       _skillsController = TextEditingController(
@@ -56,6 +70,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      setState(() {
+        _imageFile = File(picked.path);
+        _imagePath = picked.path;
+      });
+    }
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -66,6 +91,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       'phone': _phoneController.text.trim(),
       'address': _addressController.text.trim(),
     };
+
+    if (_imagePath != null) {
+      updateData['image'] = _imagePath;
+    }
 
     if (widget.user is Worker) {
       final skillsList =
@@ -121,6 +150,52 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Profile Image
+              Center(
+                child: Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 48,
+                      backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                      backgroundImage:
+                          _imageFile != null
+                              ? FileImage(_imageFile!)
+                              : (_imagePath != null && _imagePath!.isNotEmpty)
+                              ? NetworkImage(_imagePath!) as ImageProvider
+                              : null,
+                      child:
+                          (_imageFile == null &&
+                                  (_imagePath == null || _imagePath!.isEmpty))
+                              ? const Icon(
+                                Icons.person,
+                                size: 48,
+                                color: Colors.grey,
+                              )
+                              : null,
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: InkWell(
+                        onTap: _pickImage,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppTheme.spacingL),
               // Basic Information
               Text('Basic Information', style: AppTheme.heading4),
               const SizedBox(height: AppTheme.spacingM),

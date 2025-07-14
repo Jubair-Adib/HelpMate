@@ -168,11 +168,11 @@ class ProfileTab extends StatelessWidget {
             padding: const EdgeInsets.all(AppTheme.spacingL),
             child: Column(
               children: [
-                _buildProfileHeader(user),
+                _buildProfileHeader(user as User),
                 const SizedBox(height: AppTheme.spacingXL),
-                _buildProfileActions(context, user),
+                _buildProfileActions(context, user as User),
                 const SizedBox(height: AppTheme.spacingXL),
-                _buildProfileInfo(user),
+                _buildProfileInfo(user as User),
               ],
             ),
           ),

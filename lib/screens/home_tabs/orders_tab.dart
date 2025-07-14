@@ -187,7 +187,7 @@ class _OrdersTabState extends State<OrdersTab> {
                       Text('Order #${order.id}', style: AppTheme.heading4),
                       const SizedBox(height: AppTheme.spacingXS),
                       Text(
-                        'Scheduled: ${_formatDate(order.scheduledDate)}',
+                        'Scheduled: ${order.scheduledDate != null ? _formatDate(order.scheduledDate!) : 'N/A'}',
                         style: AppTheme.bodySmall,
                       ),
                     ],
@@ -200,12 +200,13 @@ class _OrdersTabState extends State<OrdersTab> {
             const SizedBox(height: AppTheme.spacingM),
 
             // Order Details
-            Text(
-              order.description,
-              style: AppTheme.bodyMedium,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
+            if (order.description != null && order.description!.isNotEmpty)
+              Text(
+                order.description!,
+                style: AppTheme.bodyMedium,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
 
             const SizedBox(height: AppTheme.spacingM),
 

@@ -8,6 +8,7 @@ class UserBase(BaseModel):
     full_name: str
     phone_number: Optional[str] = None
     address: Optional[str] = None
+    image: Optional[str] = None  # Optional profile image
 
 
 class UserCreate(UserBase):
@@ -23,6 +24,7 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
     address: Optional[str] = None
+    image: Optional[str] = None  # Optional profile image
 
 
 class UserResponse(UserBase):
@@ -62,3 +64,9 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
     user_type: Optional[str] = None 
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+    confirm_password: str 

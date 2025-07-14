@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/worker.dart';
+import 'dart:io'; // Added for File
+import '../models/review.dart'; // Added for Review
+import '../models/order.dart'; // Added for Order
 
 class ApiService {
   static const String baseUrl = 'http://10.0.2.2:8000';
@@ -81,10 +84,18 @@ class ApiService {
   }
 
   // Authentication APIs
-  Future<Map<String, dynamic>> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(
+    String email,
+    String password, {
+    String userType = 'user',
+  }) async {
     try {
+      final endpoint =
+          userType == 'worker'
+              ? '$apiUrl/v1/auth/login/worker'
+              : '$apiUrl/v1/auth/login/user';
       final response = await http.post(
-        Uri.parse('$apiUrl/v1/auth/login/user'),
+        Uri.parse(endpoint),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );
@@ -152,9 +163,10 @@ class ApiService {
     required String fullName,
     required String phone,
     required String address,
-    required String skills,
+    required List<String> skills,
     required double hourlyRate,
     required bool lookingForWork,
+    int? categoryId,
   }) async {
     try {
       final response = await http.post(
@@ -169,6 +181,7 @@ class ApiService {
           'skills': skills,
           'hourly_rate': hourlyRate,
           'looking_for_work': lookingForWork,
+          if (categoryId != null) 'category_id': categoryId,
         }),
       );
 
@@ -218,12 +231,12 @@ class ApiService {
     }
   }
 
-  Future<Worker> getWorkerProfile(int workerId) async {
+  Future<Map<String, dynamic>> getWorkerProfile() async {
     try {
-      final response = await _get('/v1/workers/$workerId');
+      final response = await _get('/v1/auth/worker/profile');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return Worker.fromJson(data);
+        return data;
       } else {
         throw Exception('Failed to fetch worker profile: ${response.body}');
       }
@@ -236,11 +249,7 @@ class ApiService {
     Map<String, dynamic> data,
   ) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getInt(userIdKey);
-      if (userId == null) throw Exception('User not authenticated');
-
-      final response = await _put('/v1/workers/$userId', data);
+      final response = await _put('/v1/auth/worker/profile', data);
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -368,14 +377,14 @@ class ApiService {
   }
 
   // Reviews APIs
-  Future<List<Map<String, dynamic>>> getWorkerReviews(int workerId) async {
+  Future<List<Review>> getWorkerReviews(int workerId) async {
     try {
       final response = await _get('/v1/workers/$workerId/reviews');
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
+        return data.map((json) => Review.fromJson(json)).toList();
       } else {
-        throw Exception('Failed to fetch reviews: ${response.body}');
+        throw Exception('Failed to fetch reviews');
       }
     } catch (e) {
       throw Exception('Network error: $e');
@@ -421,6 +430,48 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Network error: $e');
+    }
+  }
+
+  // Upload profile image and get public URL
+  Future<String> uploadUserProfileImage(File imageFile) async {
+    final uri = Uri.parse('$apiUrl/v1/auth/user/upload-profile-image');
+    final request = http.MultipartRequest('POST', uri);
+    final token = await getToken();
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    request.files.add(
+      await http.MultipartFile.fromPath('file', imageFile.path),
+    );
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['url'] as String;
+    } else {
+      throw Exception('Failed to upload image: ${response.body}');
+    }
+  }
+
+  // Upload worker profile image and get public URL
+  Future<String> uploadWorkerProfileImage(File imageFile) async {
+    final uri = Uri.parse('$apiUrl/v1/auth/worker/upload-profile-image');
+    final request = http.MultipartRequest('POST', uri);
+    final token = await getToken();
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    request.files.add(
+      await http.MultipartFile.fromPath('file', imageFile.path),
+    );
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['url'] as String;
+    } else {
+      throw Exception('Failed to upload image: ${response.body}');
     }
   }
 
@@ -682,6 +733,54 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Network error: $e');
+    }
+  }
+
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+    required String confirmPassword,
+    required String userType,
+  }) async {
+    final endpoint =
+        userType == 'worker'
+            ? '/v1/auth/worker/change-password'
+            : '/v1/auth/user/change-password';
+    final response = await _post(endpoint, {
+      'old_password': oldPassword,
+      'new_password': newPassword,
+      'confirm_password': confirmPassword,
+    });
+    if (response.statusCode != 200) {
+      String errorMsg = 'Failed to change password';
+      try {
+        final errorData =
+            response.body.isNotEmpty ? jsonDecode(response.body) : null;
+        if (errorData is Map && errorData['detail'] != null) {
+          errorMsg = errorData['detail'].toString();
+        }
+      } catch (_) {}
+      throw Exception(errorMsg);
+    }
+  }
+
+  Future<List<Order>> getWorkerPendingOrders() async {
+    final response = await _get('/v1/orders/worker/pending');
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => Order.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to fetch pending orders');
+    }
+  }
+
+  Future<List<Order>> getWorkerCompletedOrders() async {
+    final response = await _get('/v1/orders/worker/completed');
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => Order.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to fetch completed orders');
     }
   }
 }

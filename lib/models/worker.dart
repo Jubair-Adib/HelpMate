@@ -17,6 +17,7 @@ class Worker {
   final bool isActive;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final String? image;
 
   Worker({
     required this.id,
@@ -35,6 +36,7 @@ class Worker {
     required this.isActive,
     required this.createdAt,
     this.updatedAt,
+    this.image,
   });
 
   factory Worker.fromJson(Map<String, dynamic> json) {
@@ -42,21 +44,27 @@ class Worker {
       id: json['id'] is int ? json['id'] : (json['id'] ?? 0),
       email: json['email'] ?? '',
       fullName: json['full_name'] ?? '',
-      phoneNumber: json['phone_number'],
-      address: json['address'],
-      bio: json['bio'],
-      skills: json['skills'] != null ? List<String>.from(json['skills']) : null,
+      phoneNumber: json['phone_number']?.toString(),
+      address: json['address']?.toString(),
+      bio: json['bio']?.toString(),
+      skills:
+          json['skills'] != null
+              ? List<String>.from(json['skills'])
+              : <String>[],
       hourlyRate:
           json['hourly_rate'] != null
               ? (json['hourly_rate'] as num).toDouble()
-              : null,
+              : 0.0,
       experienceYears:
-          json['experience_years'] is int
-              ? json['experience_years']
-              : (json['experience_years'] ?? 0),
+          json['experience_years'] != null
+              ? (json['experience_years'] as num).toInt()
+              : 0,
       isAvailable: json['is_available'] ?? true,
       rating: json['rating'] != null ? (json['rating'] as num).toDouble() : 0.0,
-      totalReviews: json['total_reviews'] ?? 0,
+      totalReviews:
+          json['total_reviews'] != null
+              ? (json['total_reviews'] as num).toInt()
+              : 0,
       isVerified: json['is_verified'] ?? false,
       isActive: json['is_active'] ?? true,
       createdAt:
@@ -67,6 +75,7 @@ class Worker {
           json['updated_at'] != null
               ? DateTime.parse(json['updated_at'])
               : null,
+      image: json['image']?.toString(),
     );
   }
 
@@ -88,6 +97,7 @@ class Worker {
       'is_active': isActive,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+      'image': image,
     };
   }
 }

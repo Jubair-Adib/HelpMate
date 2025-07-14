@@ -7,6 +7,7 @@ from app.models.user import User
 from app.models.service import Service
 from app.schemas.order import OrderCreate, OrderUpdate, OrderResponse, ReviewCreate, ReviewResponse
 from app.routers.auth import get_current_user
+from app.models.worker import Worker
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -132,7 +133,7 @@ async def get_orders(
         joinedload(Order.service).joinedload(Service.category),
         joinedload(Order.worker),
         joinedload(Order.user)
-    ).filter(Order.user_id == current_user.id).all()
+    ).filter(Order.user_id == current_user.id).order_by(Order.created_at.desc()).all()
     return orders
 
 
@@ -343,3 +344,37 @@ async def get_review(
         )
     
     return review 
+
+@router.get("/worker/pending", response_model=List[OrderResponse])
+async def get_pending_orders_for_worker(
+    current_worker: Worker = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all pending orders assigned to the current worker"""
+    if not isinstance(current_worker, Worker):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only workers can access this endpoint")
+    orders = db.query(Order).options(
+        joinedload(Order.service).joinedload(Service.category),
+        joinedload(Order.user)
+    ).filter(
+        Order.worker_id == current_worker.id,
+        Order.status == "pending"
+    ).order_by(Order.created_at.desc()).all()
+    return orders
+
+@router.get("/worker/completed", response_model=List[OrderResponse])
+async def get_completed_orders_for_worker(
+    current_worker: Worker = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all completed orders assigned to the current worker"""
+    if not isinstance(current_worker, Worker):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only workers can access this endpoint")
+    orders = db.query(Order).options(
+        joinedload(Order.service).joinedload(Service.category),
+        joinedload(Order.user)
+    ).filter(
+        Order.worker_id == current_worker.id,
+        Order.status == "completed"
+    ).order_by(Order.created_at.desc()).all()
+    return orders 

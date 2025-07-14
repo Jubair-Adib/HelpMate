@@ -9,15 +9,47 @@ import 'favourites_screen.dart';
 import 'help_support_screen.dart';
 import 'privacy_security_screen.dart';
 import 'admin_panel_screen.dart';
+import '../models/user.dart';
+import '../models/worker.dart' as worker_models;
 
-class ProfileTab extends StatelessWidget {
+class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
+
+  @override
+  State<ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends State<ProfileTab> {
+  @override
+  void initState() {
+    super.initState();
+    // Refresh user profile to get latest data including image
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      authProvider.refreshUserProfile();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
-    final name = user?.fullName.isNotEmpty == true ? user!.fullName : 'User';
-    final email = user?.email ?? '';
+    String name = 'User';
+    String email = '';
+    String? image;
+    bool isAdmin = false;
+    if (user != null) {
+      if (user is User) {
+        name = user.fullName.isNotEmpty ? user.fullName : 'User';
+        email = user.email;
+        image = user.image;
+        isAdmin = user.isAdmin;
+      } else if (user is worker_models.Worker) {
+        name = user.fullName.isNotEmpty ? user.fullName : 'User';
+        email = user.email;
+        image = user.image;
+        // If you want to treat workers as admin, add logic here
+      }
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -62,14 +94,21 @@ class ProfileTab extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 50,
                     backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.person,
-                      size: 50,
-                      color: Color(0xFF1565C0),
-                    ),
+                    backgroundImage:
+                        (image != null && image.isNotEmpty == true)
+                            ? NetworkImage(image)
+                            : null,
+                    child:
+                        (image == null || image.isEmpty != false)
+                            ? const Icon(
+                              Icons.person,
+                              size: 50,
+                              color: Color(0xFF1565C0),
+                            )
+                            : null,
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -97,7 +136,7 @@ class ProfileTab extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  if (user?.isAdmin == true)
+                  if (isAdmin == true)
                     _buildProfileOption(
                       icon: Icons.admin_panel_settings,
                       title: 'Admin Panel',
@@ -136,32 +175,36 @@ class ProfileTab extends StatelessWidget {
                     subtitle: 'Manage your payment options',
                     onTap: () {},
                   ),
-                  _buildProfileOption(
-                    icon: Icons.history,
-                    title: 'Service History',
-                    subtitle: 'View your past services',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ServiceHistoryScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildProfileOption(
-                    icon: Icons.favorite_outline,
-                    title: 'Favorites',
-                    subtitle: 'Your saved service providers',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const FavouritesScreen(),
-                        ),
-                      );
-                    },
-                  ),
+                  // Show Service History only for users, not workers
+                  if (user is User)
+                    _buildProfileOption(
+                      icon: Icons.history,
+                      title: 'Service History',
+                      subtitle: 'View your past services',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ServiceHistoryScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  // Show Favorites only for users, not workers
+                  if (user is User)
+                    _buildProfileOption(
+                      icon: Icons.favorite_outline,
+                      title: 'Favorites',
+                      subtitle: 'Your saved service providers',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const FavouritesScreen(),
+                          ),
+                        );
+                      },
+                    ),
                   _buildProfileOption(
                     icon: Icons.notifications_outlined,
                     title: 'Notifications',

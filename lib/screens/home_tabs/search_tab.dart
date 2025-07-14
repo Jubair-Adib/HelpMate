@@ -268,13 +268,20 @@ class _SearchTabState extends State<SearchTab> {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-          child: Text(
-            worker.fullName.split(' ').map((e) => e[0]).join(''),
-            style: AppTheme.bodyMedium.copyWith(
-              color: AppTheme.primaryColor,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          backgroundImage:
+              (worker.image != null && worker.image!.isNotEmpty)
+                  ? NetworkImage(worker.image!)
+                  : null,
+          child:
+              (worker.image == null || worker.image!.isEmpty)
+                  ? Text(
+                    worker.fullName.split(' ').map((e) => e[0]).join(''),
+                    style: AppTheme.bodyMedium.copyWith(
+                      color: AppTheme.primaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
+                  : null,
         ),
         title: Text(worker.fullName, style: AppTheme.bodyLarge),
         subtitle: Column(

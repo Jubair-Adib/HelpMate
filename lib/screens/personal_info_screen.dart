@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants/theme.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../models/user.dart';
+import '../models/worker.dart' as worker_models;
+import 'package:image_picker/image_picker.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
   const PersonalInfoScreen({super.key});
@@ -23,6 +27,8 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   String? _error;
+  String? _imagePath;
+  File? _imageFile;
 
   @override
   void initState() {
@@ -43,6 +49,17 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      setState(() {
+        _imageFile = File(picked.path);
+        _imagePath = picked.path;
+      });
+    }
+  }
+
   Future<void> _loadUserProfile() async {
     try {
       setState(() {
@@ -50,13 +67,24 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         _error = null;
       });
 
-      final userProfile = await _apiService.getUserProfile();
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final currentUser = authProvider.currentUser;
+      final userType = authProvider.userType;
+
+      Map<String, dynamic> userProfile;
+      if (userType == 'worker' && currentUser is worker_models.Worker) {
+        userProfile = await _apiService.getWorkerProfile();
+      } else {
+        userProfile = await _apiService.getUserProfile();
+      }
 
       setState(() {
         _nameController.text = userProfile['full_name'] ?? '';
         _emailController.text = userProfile['email'] ?? '';
-        _phoneController.text = userProfile['phone'] ?? '';
+        // Use 'phone_number' instead of 'phone'
+        _phoneController.text = userProfile['phone_number'] ?? '';
         _addressController.text = userProfile['address'] ?? '';
+        _imagePath = userProfile['image'] ?? null;
         _isLoading = false;
       });
     } catch (e) {
@@ -76,15 +104,39 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         _error = null;
       });
 
-      await _apiService.updateUserProfile({
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userType = authProvider.userType;
+
+      String? imageUrl;
+      // If a new image is picked and not already a URL, upload it
+      if (_imageFile != null &&
+          (_imagePath == null || !_imagePath!.startsWith('http'))) {
+        if (userType == 'worker') {
+          imageUrl = await _apiService.uploadWorkerProfileImage(_imageFile!);
+        } else {
+          imageUrl = await _apiService.uploadUserProfileImage(_imageFile!);
+        }
+      }
+
+      final profileData = {
         'full_name': _nameController.text.trim(),
         'phone_number': _phoneController.text.trim(),
         'address': _addressController.text.trim(),
-      });
+        if (imageUrl != null) 'image': imageUrl,
+        if (imageUrl == null && _imagePath != null) 'image': _imagePath,
+      };
+
+      if (userType == 'worker') {
+        await _apiService.updateWorkerProfile(profileData);
+      } else {
+        await _apiService.updateUserProfile(profileData);
+      }
 
       // Update the auth provider with new user data
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await authProvider.refreshUserProfile();
+
+      // Reload profile to update UI with new image/phone
+      await _loadUserProfile();
 
       setState(() {
         _isSaving = false;
@@ -152,31 +204,56 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                     children: [
                       // Profile Picture Section
                       Center(
-                        child: Column(
+                        child: Stack(
                           children: [
                             CircleAvatar(
                               radius: 50,
                               backgroundColor: AppTheme.primaryColor
                                   .withOpacity(0.1),
-                              child: Text(
-                                _nameController.text.isNotEmpty
-                                    ? _nameController.text
-                                        .split(' ')
-                                        .map((e) => e[0])
-                                        .join('')
-                                    : 'U',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.primaryColor,
-                                ),
-                              ),
+                              backgroundImage:
+                                  _imageFile != null
+                                      ? FileImage(_imageFile!)
+                                      : (_imagePath != null &&
+                                          _imagePath!.isNotEmpty)
+                                      ? NetworkImage(_imagePath!)
+                                          as ImageProvider
+                                      : null,
+                              child:
+                                  (_imageFile == null &&
+                                          (_imagePath == null ||
+                                              _imagePath!.isEmpty))
+                                      ? Text(
+                                        _nameController.text.isNotEmpty
+                                            ? _nameController.text
+                                                .split(' ')
+                                                .map((e) => e[0])
+                                                .join('')
+                                            : 'U',
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.primaryColor,
+                                        ),
+                                      )
+                                      : null,
                             ),
-                            const SizedBox(height: AppTheme.spacingM),
-                            Text(
-                              'Profile Picture',
-                              style: AppTheme.bodyMedium.copyWith(
-                                color: AppTheme.textSecondaryColor,
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: InkWell(
+                                onTap: _pickImage,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
                               ),
                             ),
                           ],

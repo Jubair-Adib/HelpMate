@@ -3,6 +3,7 @@ import '../constants/theme.dart';
 import '../services/api_service.dart';
 import '../models/worker.dart';
 import '../models/service.dart';
+import '../models/review.dart';
 import 'chat_screen.dart';
 import 'booking_confirmation_screen.dart';
 
@@ -22,7 +23,7 @@ class WorkerDetailScreen extends StatefulWidget {
 
 class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
   final ApiService _apiService = ApiService();
-  List<Map<String, dynamic>> _reviews = [];
+  List<Review> _reviews = [];
   bool _isLoadingReviews = true;
   bool _isFavorite = false;
   bool _isLoadingFavorite = true;
@@ -144,10 +145,22 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
           CircleAvatar(
             radius: 50,
             backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-            child: Text(
-              widget.worker.fullName.split(' ').map((e) => e[0]).join(''),
-              style: AppTheme.heading1.copyWith(color: AppTheme.primaryColor),
-            ),
+            backgroundImage:
+                (widget.worker.image != null && widget.worker.image!.isNotEmpty)
+                    ? NetworkImage(widget.worker.image!)
+                    : null,
+            child:
+                (widget.worker.image == null || widget.worker.image!.isEmpty)
+                    ? Text(
+                      widget.worker.fullName
+                          .split(' ')
+                          .map((e) => e[0])
+                          .join(''),
+                      style: AppTheme.heading1.copyWith(
+                        color: AppTheme.primaryColor,
+                      ),
+                    )
+                    : null,
           ),
           const SizedBox(height: AppTheme.spacingM),
 
@@ -293,11 +306,10 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
                               backgroundColor: AppTheme.primaryColor
                                   .withOpacity(0.1),
                               child: Text(
-                                review['user_name']
-                                        ?.split(' ')
-                                        .map((e) => e[0])
-                                        .join('') ??
-                                    'U',
+                                review.userName
+                                    .split(' ')
+                                    .map((e) => e[0])
+                                    .join(''),
                                 style: AppTheme.bodySmall.copyWith(
                                   color: AppTheme.primaryColor,
                                   fontWeight: FontWeight.w600,
@@ -310,7 +322,7 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    review['user']?['full_name'] ?? 'Anonymous',
+                                    review.userName,
                                     style: AppTheme.bodyMedium.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -324,7 +336,7 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
                                       ),
                                       const SizedBox(width: AppTheme.spacingXS),
                                       Text(
-                                        '${review['rating']}',
+                                        '${review.rating}',
                                         style: AppTheme.bodySmall,
                                       ),
                                     ],
@@ -335,10 +347,7 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
                           ],
                         ),
                         const SizedBox(height: AppTheme.spacingS),
-                        Text(
-                          review['comment'] ?? '',
-                          style: AppTheme.bodyMedium,
-                        ),
+                        Text(review.comment ?? '', style: AppTheme.bodyMedium),
                       ],
                     ),
                   ),

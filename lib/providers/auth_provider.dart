@@ -1,18 +1,26 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../models/user.dart';
+import '../models/worker.dart' as worker_models;
 
 class AuthProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
 
-  User? _currentUser;
+  User? _user;
+  worker_models.Worker? _worker;
+  String? _userType; // 'user' or 'worker'
   bool _isLoading = false;
   String? _error;
 
-  User? get currentUser => _currentUser;
+  User? get user => _user;
+  worker_models.Worker? get worker => _worker;
+  String? get userType => _userType;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  bool get isAuthenticated => _currentUser != null;
+  bool get isAuthenticated => _user != null || _worker != null;
+
+  /// Returns the currently logged-in user or worker, depending on userType
+  Object? get currentUser => _userType == 'worker' ? _worker : _user;
 
   // Check if user is already logged in
   Future<bool> checkAuthStatus() async {
@@ -30,17 +38,30 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // Login
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(
+    String email,
+    String password, {
+    required String userType,
+  }) async {
     _setLoading(true);
     _clearError();
-
+    _userType = userType;
     try {
-      final response = await _apiService.login(email, password);
-
-      // Fetch full user profile after login
-      final userProfile = await _apiService.getUserProfile();
-      _currentUser = User.fromJson(userProfile);
-
+      final response = await _apiService.login(
+        email,
+        password,
+        userType: userType,
+      );
+      // Fetch full profile after login
+      if (userType == 'worker') {
+        final workerProfile = await _apiService.getWorkerProfile();
+        _worker = worker_models.Worker.fromJson(workerProfile);
+        _user = null;
+      } else {
+        final userProfile = await _apiService.getUserProfile();
+        _user = User.fromJson(userProfile);
+        _worker = null;
+      }
       _setLoading(false);
       notifyListeners();
       return true;
@@ -62,7 +83,7 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     _setLoading(true);
     _clearError();
-
+    _userType = 'user';
     try {
       final response = await _apiService.registerUser(
         email: email,
@@ -71,8 +92,8 @@ class AuthProvider extends ChangeNotifier {
         phone: phone,
         address: address,
       );
-
-      _currentUser = User.fromJson(response['user']);
+      _user = User.fromJson(response['user']);
+      _worker = null;
       _setLoading(false);
       notifyListeners();
       return true;
@@ -91,13 +112,14 @@ class AuthProvider extends ChangeNotifier {
     required String fullName,
     required String phone,
     required String address,
-    required String skills,
+    required List<String> skills,
     required double hourlyRate,
     required bool lookingForWork,
+    int? categoryId,
   }) async {
     _setLoading(true);
     _clearError();
-
+    _userType = 'worker';
     try {
       final response = await _apiService.registerWorker(
         email: email,
@@ -108,9 +130,10 @@ class AuthProvider extends ChangeNotifier {
         skills: skills,
         hourlyRate: hourlyRate,
         lookingForWork: lookingForWork,
+        categoryId: categoryId,
       );
-
-      _currentUser = Worker.fromJson(response['user']);
+      _worker = worker_models.Worker.fromJson(response['user']);
+      _user = null;
       _setLoading(false);
       notifyListeners();
       return true;
@@ -126,7 +149,9 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     try {
       await _apiService.clearStoredData();
-      _currentUser = null;
+      _user = null;
+      _worker = null;
+      _userType = null;
       _clearError();
       notifyListeners();
     } catch (e) {
@@ -137,18 +162,23 @@ class AuthProvider extends ChangeNotifier {
 
   // Update user profile
   Future<bool> updateProfile(Map<String, dynamic> data) async {
-    if (_currentUser == null) return false;
+    if (_user == null && _worker == null) return false;
 
     _setLoading(true);
     _clearError();
 
     try {
-      final response = await _apiService.updateWorkerProfile(data);
-
-      if (_currentUser is Worker) {
-        _currentUser = Worker.fromJson(response);
+      Map<String, dynamic> response;
+      if (_userType == 'worker') {
+        response = await _apiService.updateWorkerProfile(data);
       } else {
-        _currentUser = User.fromJson(response);
+        response = await _apiService.updateUserProfile(data);
+      }
+
+      if (_worker != null) {
+        _worker = worker_models.Worker.fromJson(response);
+      } else {
+        _user = User.fromJson(response);
       }
 
       _setLoading(false);
@@ -164,15 +194,20 @@ class AuthProvider extends ChangeNotifier {
 
   // Refresh user profile from backend
   Future<bool> refreshUserProfile() async {
-    if (_currentUser == null) return false;
+    if (_user == null && _worker == null) return false;
 
     try {
-      final userProfile = await _apiService.getUserProfile();
-
-      if (_currentUser is Worker) {
-        _currentUser = Worker.fromJson(userProfile);
+      Map<String, dynamic> userProfile;
+      if (_userType == 'worker') {
+        userProfile = await _apiService.getWorkerProfile();
       } else {
-        _currentUser = User.fromJson(userProfile);
+        userProfile = await _apiService.getUserProfile();
+      }
+
+      if (_worker != null) {
+        _worker = worker_models.Worker.fromJson(userProfile);
+      } else {
+        _user = User.fromJson(userProfile);
       }
 
       notifyListeners();

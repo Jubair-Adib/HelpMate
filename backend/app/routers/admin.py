@@ -7,6 +7,7 @@ from app.models.category import Category
 from app.models.order import Order
 from app.schemas.category import CategoryCreate, CategoryResponse
 from app.routers.auth import get_current_user
+from app.models.service import Service
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -81,8 +82,33 @@ def list_workers(db: Session = Depends(get_db), current_user: User = Depends(adm
 # List all orders
 @router.get("/orders")
 def list_orders(db: Session = Depends(get_db), current_user: User = Depends(admin_required)):
-    orders = db.query(Order).all()
-    return orders
+    orders = db.query(Order).order_by(Order.created_at.desc()).all()
+    result = []
+    for order in orders:
+        user = db.query(User).filter(User.id == order.user_id).first()
+        worker = db.query(Worker).filter(Worker.id == order.worker_id).first()
+        service = db.query(Service).filter(Service.id == order.service_id).first()
+        order_dict = order.__dict__.copy()
+        # Remove SQLAlchemy state
+        order_dict.pop('_sa_instance_state', None)
+        order_dict['user'] = {
+            'id': user.id,
+            'full_name': user.full_name,
+            'email': user.email
+        } if user else None
+        order_dict['worker'] = {
+            'id': worker.id,
+            'full_name': worker.full_name,
+            'email': worker.email
+        } if worker else None
+        order_dict['service'] = {
+            'id': service.id,
+            'title': service.title,
+            'description': service.description,
+            'hourly_rate': service.hourly_rate
+        } if service else None
+        result.append(order_dict)
+    return result
 
 # List all categories
 @router.get("/categories")

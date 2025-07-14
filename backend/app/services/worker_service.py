@@ -7,7 +7,7 @@ class WorkerService:
     
     @staticmethod
     def create_worker_with_services(db: Session, worker_data: dict) -> Worker:
-        """Create a worker and automatically create services based on skills"""
+        """Create a worker and automatically create services based on skills or selected category"""
         
         # Create the worker first
         worker = Worker(
@@ -26,8 +26,25 @@ class WorkerService:
         db.add(worker)
         db.flush()  # Get the worker ID without committing
         
-        # Create services based on skills
-        if worker_data.get('skills'):
+        # If category_id is provided, create a service for that category
+        if worker_data.get('category_id'):
+            category_id = worker_data['category_id']
+            from app.models.category import Category
+            category = db.query(Category).filter(Category.id == category_id).first()
+            if category:
+                service = Service(
+                    title=f"Professional {category.name}",
+                    description=f"Professional {category.name} service by {worker.full_name}",
+                    category_id=category_id,
+                    worker_id=worker.id,
+                    hourly_rate=worker.hourly_rate or 20.0,
+                    minimum_hours=1,
+                    is_available=worker.is_available
+                )
+                db.add(service)
+                db.flush()
+        # Otherwise, create services based on skills
+        elif worker_data.get('skills'):
             WorkerService._create_services_from_skills(db, worker, worker_data['skills'])
         
         db.commit()

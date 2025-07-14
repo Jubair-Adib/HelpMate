@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../constants/theme.dart';
 import '../providers/auth_provider.dart';
 import 'home_screen.dart';
+import '../models/category.dart'; // Added import for Category model
+import '../services/api_service.dart'; // Added import for ApiService
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -26,6 +28,41 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   bool _obscureConfirmPassword = true;
   bool _lookingForWork = false;
 
+  // Category state
+  List<Category> _categories = [];
+  Category? _selectedCategory;
+  bool _isCategoryLoading = false;
+  String? _categoryError;
+
+  @override
+  void initState() {
+    super.initState();
+    // Optionally, fetch categories here if you want them preloaded
+  }
+
+  Future<void> _fetchCategories() async {
+    setState(() {
+      _isCategoryLoading = true;
+      _categoryError = null;
+    });
+    try {
+      final categoriesData = await ApiService().getCategories();
+      final categories =
+          categoriesData
+              .map<Category>((json) => Category.fromJson(json))
+              .toList();
+      setState(() {
+        _categories = categories;
+        _isCategoryLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _categoryError = 'Failed to load categories';
+        _isCategoryLoading = false;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -41,20 +78,32 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-
+    if (_lookingForWork && _selectedCategory == null) {
+      setState(() {
+        _categoryError = 'Please select a category';
+      });
+      return;
+    }
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     bool success = false;
 
     if (_lookingForWork) {
+      // Pass categoryId if your backend supports it
       success = await authProvider.registerWorker(
         email: _emailController.text.trim(),
         password: _passwordController.text,
         fullName: _fullNameController.text.trim(),
         phone: _phoneController.text.trim(),
         address: _addressController.text.trim(),
-        skills: _skillsController.text.trim(),
+        skills:
+            _skillsController.text
+                .split(',')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty)
+                .toList(),
         hourlyRate: double.parse(_hourlyRateController.text),
         lookingForWork: _lookingForWork,
+        categoryId: _selectedCategory!.id,
       );
     } else {
       success = await authProvider.registerUser(
@@ -110,10 +159,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         style: AppTheme.bodySmall,
                       ),
                       value: _lookingForWork,
-                      onChanged: (value) {
+                      onChanged: (value) async {
                         setState(() {
                           _lookingForWork = value!;
+                          _selectedCategory = null;
+                          _categoryError = null;
                         });
+                        if (value == true && _categories.isEmpty) {
+                          await _fetchCategories();
+                        }
                       },
                       controlAffinity: ListTileControlAffinity.leading,
                       activeColor: AppTheme.primaryColor,
@@ -157,7 +211,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       return 'Please enter your email';
                     }
                     if (!RegExp(
-                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      r'^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$',
                     ).hasMatch(value)) {
                       return 'Please enter a valid email';
                     }
@@ -207,6 +261,49 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 if (_lookingForWork) ...[
                   Text('Professional Information', style: AppTheme.heading4),
                   const SizedBox(height: AppTheme.spacingM),
+
+                  // Category Dropdown
+                  _isCategoryLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : DropdownButtonFormField<Category>(
+                        value: _selectedCategory,
+                        items:
+                            _categories
+                                .map(
+                                  (cat) => DropdownMenuItem<Category>(
+                                    value: cat,
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.category,
+                                          color: AppTheme.primaryColor,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(cat.name),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (cat) {
+                          setState(() {
+                            _selectedCategory = cat;
+                            _categoryError = null;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          labelText: 'Select Category',
+                          prefixIcon: const Icon(Icons.category),
+                          errorText: _categoryError,
+                        ),
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Please select a category';
+                          }
+                          return null;
+                        },
+                      ),
+                  const SizedBox(height: AppTheme.spacingL),
 
                   // Skills
                   TextFormField(

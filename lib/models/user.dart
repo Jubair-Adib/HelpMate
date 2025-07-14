@@ -7,6 +7,7 @@ class User {
   final String userType;
   final DateTime createdAt;
   final bool isAdmin;
+  final String? image;
 
   User({
     required this.id,
@@ -17,6 +18,7 @@ class User {
     required this.userType,
     required this.createdAt,
     this.isAdmin = false,
+    this.image,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class User {
       userType: json['user_type'] ?? 'user',
       createdAt: DateTime.parse(json['created_at']),
       isAdmin: json['is_admin'] ?? false,
+      image: json['image'],
     );
   }
 
@@ -41,6 +44,7 @@ class User {
       'address': address,
       'user_type': userType,
       'created_at': createdAt.toIso8601String(),
+      'image': image,
     };
   }
 }

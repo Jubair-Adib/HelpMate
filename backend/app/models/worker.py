@@ -13,6 +13,7 @@ class Worker(Base):
     hashed_password = Column(String, nullable=False)
     phone_number = Column(String)
     address = Column(Text)
+    image = Column(String, nullable=True)  # Optional profile image URL or path
     
     # Work Profile
     bio = Column(Text)

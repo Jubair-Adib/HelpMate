@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.core.database import engine
 from app.models import User, Worker, WorkerOrder, Category, Service, Order, Review, Chat, Message, UserFavorite
 from app.routers import auth, categories, workers, services, orders, chat, favorites
@@ -23,6 +24,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve static files (for profile images, etc.)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1")

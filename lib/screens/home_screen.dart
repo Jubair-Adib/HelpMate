@@ -4,12 +4,16 @@ import '../constants/theme.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../models/user.dart';
+import '../models/worker.dart' as worker_models;
 import 'home_tabs/categories_tab.dart';
 import 'home_tabs/search_tab.dart';
 import 'home_tabs/orders_tab.dart';
 import 'profile_tab.dart';
 import 'worker_list_screen.dart';
 import '../models/category.dart';
+import 'worker_reviews_screen.dart';
+import 'worker_pending_services_screen.dart';
+import 'worker_completed_services_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -36,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.currentUser;
 
-    if (user is Worker) {
+    if (user is worker_models.Worker) {
       // Worker tabs
       _tabs = [const SearchTab(), const OrdersTab(), const ProfileTab()];
     } else {
@@ -66,8 +70,158 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
-    final name = user?.fullName.isNotEmpty == true ? user!.fullName : 'User';
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.currentUser;
+    final userType = authProvider.userType;
+    String name = 'User';
+    if (user != null) {
+      if (user is User) {
+        name = user.fullName.isNotEmpty ? user.fullName : 'User';
+      } else if (user is worker_models.Worker) {
+        name = user.fullName.isNotEmpty ? user.fullName : 'User';
+      }
+    }
+
+    // Worker dashboard
+    if (userType == 'worker') {
+      return Scaffold(
+        backgroundColor: AppTheme.backgroundColor,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Header with greeting and profile
+              Container(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Hello,',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1565C0),
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                      ],
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ProfileTab(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1565C0),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              // 2x2 Grid Dashboard
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 20,
+                    mainAxisSpacing: 20,
+                    childAspectRatio: 1.1,
+                    children: [
+                      _buildWorkerPanel(
+                        icon: Icons.pending_actions,
+                        label: 'Pending Services',
+                        color: Colors.orange,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      const WorkerPendingServicesScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildWorkerPanel(
+                        icon: Icons.check_circle_outline,
+                        label: 'Completed Services',
+                        color: Colors.green,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      const WorkerCompletedServicesScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildWorkerPanel(
+                        icon: Icons.chat_bubble_outline,
+                        label: 'View Chats with Client',
+                        color: Colors.blue,
+                        onTap: () {
+                          // TODO: Navigate to Chats screen
+                        },
+                      ),
+                      _buildWorkerPanel(
+                        icon: Icons.reviews,
+                        label: 'View All Reviews',
+                        color: Colors.purple,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const WorkerReviewsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // User/Admin: show tabbed UI
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
@@ -285,6 +439,53 @@ class _HomeScreenState extends State<HomeScreen> {
               category['name'] ?? '',
               style: const TextStyle(
                 fontSize: 14,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Montserrat',
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWorkerPanel({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, size: 36, color: color),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
                 fontFamily: 'Montserrat',
               ),

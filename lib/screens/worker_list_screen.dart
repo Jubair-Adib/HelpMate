@@ -142,14 +142,21 @@ class _WorkerListScreenState extends State<WorkerListScreen> {
               CircleAvatar(
                 radius: 32,
                 backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-                child: Text(
-                  worker.fullName.split(' ').map((e) => e[0]).join(''),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
-                  ),
-                ),
+                backgroundImage:
+                    (worker.image != null && worker.image!.isNotEmpty)
+                        ? NetworkImage(worker.image!)
+                        : null,
+                child:
+                    (worker.image == null || worker.image!.isEmpty)
+                        ? Text(
+                          worker.fullName.split(' ').map((e) => e[0]).join(''),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryColor,
+                          ),
+                        )
+                        : null,
               ),
               const SizedBox(width: 18),
 
