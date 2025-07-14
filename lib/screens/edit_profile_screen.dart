@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants/theme.dart';
 import '../providers/auth_provider.dart';
-import '../models/user.dart';
+import '../models/user.dart' as user_models;
+import '../models/worker.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  final User user;
+  final user_models.User user;
 
   const EditProfileScreen({super.key, required this.user});
 
@@ -21,7 +22,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _skillsController;
   late TextEditingController _hourlyRateController;
 
-  bool _lookingForWork = false;
+  bool _isAvailable = false;
 
   @override
   void initState() {
@@ -32,11 +33,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     if (widget.user is Worker) {
       final worker = widget.user as Worker;
-      _skillsController = TextEditingController(text: worker.skills);
-      _hourlyRateController = TextEditingController(
-        text: worker.hourlyRate.toString(),
+      _skillsController = TextEditingController(
+        text: worker.skills != null ? worker.skills!.join(', ') : '',
       );
-      _lookingForWork = worker.lookingForWork;
+      _hourlyRateController = TextEditingController(
+        text: worker.hourlyRate?.toString() ?? '',
+      );
+      _isAvailable = worker.isAvailable;
     } else {
       _skillsController = TextEditingController();
       _hourlyRateController = TextEditingController();
@@ -65,9 +68,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     };
 
     if (widget.user is Worker) {
-      updateData['skills'] = _skillsController.text.trim();
-      updateData['hourly_rate'] = double.parse(_hourlyRateController.text);
-      updateData['looking_for_work'] = _lookingForWork;
+      final skillsList =
+          _skillsController.text
+              .trim()
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
+      updateData['skills'] = skillsList;
+      if (_hourlyRateController.text.isNotEmpty) {
+        updateData['hourly_rate'] = double.parse(_hourlyRateController.text);
+      }
+      updateData['is_available'] = _isAvailable;
     }
 
     final success = await authProvider.updateProfile(updateData);
@@ -211,13 +223,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                 const SizedBox(height: AppTheme.spacingL),
 
-                // Looking for work checkbox
+                // Available for work checkbox
                 CheckboxListTile(
-                  title: const Text('Looking for work'),
-                  value: _lookingForWork,
+                  title: const Text('Available for work'),
+                  value: _isAvailable,
                   onChanged: (value) {
                     setState(() {
-                      _lookingForWork = value!;
+                      _isAvailable = value!;
                     });
                   },
                   controlAffinity: ListTileControlAffinity.leading,

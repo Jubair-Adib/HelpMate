@@ -30,7 +30,6 @@ class Worker(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
-    services = relationship("Service", back_populates="worker")
     orders_received = relationship("Order", back_populates="worker")
     orders_placed = relationship("WorkerOrder", back_populates="worker")
     reviews_received = relationship("Review", back_populates="worker")

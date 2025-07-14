@@ -1,5 +1,5 @@
 # Import all models in the correct order to avoid circular dependencies
-from .user import User
+from .user import User, UserFavorite
 from .worker import Worker, WorkerOrder
 from .category import Category
 from .service import Service
@@ -9,10 +9,13 @@ from .chat import Chat, Message
 # Export all models
 __all__ = [
     "User",
+    "UserFavorite",
     "Worker", 
     "WorkerOrder",
     "Category",
     "Service",
     "Order",
-    "Review"
+    "Review",
+    "Chat",
+    "Message"
 ] 

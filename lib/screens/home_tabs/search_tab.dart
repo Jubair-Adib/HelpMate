@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../constants/theme.dart';
 import '../../services/api_service.dart';
-import '../../models/user.dart';
+import '../../models/user.dart' as user_models;
+import '../../models/worker.dart';
 import '../../models/category.dart';
 import '../worker_list_screen.dart';
+import '../worker_detail_screen.dart';
 
 class SearchTab extends StatefulWidget {
   const SearchTab({super.key});
@@ -65,16 +67,20 @@ class _SearchTabState extends State<SearchTab> {
       });
 
       final workersData = await _apiService.getWorkers();
-      final allWorkers =
-          workersData.map((json) => Worker.fromJson(json)).toList();
+      final allWorkers = workersData;
 
       // Filter workers based on search query
       final filteredWorkers =
           allWorkers.where((worker) {
             final searchLower = query.toLowerCase();
             return worker.fullName.toLowerCase().contains(searchLower) ||
-                worker.skills.toLowerCase().contains(searchLower) ||
-                worker.address.toLowerCase().contains(searchLower);
+                (worker.skills != null &&
+                    worker.skills!
+                        .join(', ')
+                        .toLowerCase()
+                        .contains(searchLower)) ||
+                (worker.address != null &&
+                    worker.address!.toLowerCase().contains(searchLower));
           }).toList();
 
       setState(() {
@@ -275,7 +281,9 @@ class _SearchTabState extends State<SearchTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              worker.skills,
+              worker.skills != null && worker.skills!.isNotEmpty
+                  ? worker.skills!.join(', ')
+                  : 'No skills listed',
               style: AppTheme.bodySmall,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -285,13 +293,10 @@ class _SearchTabState extends State<SearchTab> {
               children: [
                 Icon(Icons.star, size: 14, color: AppTheme.warningColor),
                 const SizedBox(width: AppTheme.spacingXS),
-                Text(
-                  worker.rating?.toStringAsFixed(1) ?? 'No rating',
-                  style: AppTheme.caption,
-                ),
+                Text(worker.rating.toStringAsFixed(1), style: AppTheme.caption),
                 const Spacer(),
                 Text(
-                  '\$${worker.hourlyRate}/hr',
+                  '\$${worker.hourlyRate ?? 0}/hr',
                   style: AppTheme.bodySmall.copyWith(
                     fontWeight: FontWeight.w600,
                     color: AppTheme.primaryColor,
@@ -308,16 +313,16 @@ class _SearchTabState extends State<SearchTab> {
           ),
           decoration: BoxDecoration(
             color:
-                worker.lookingForWork
+                worker.isAvailable
                     ? AppTheme.successColor.withOpacity(0.1)
                     : AppTheme.errorColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(AppTheme.radiusS),
           ),
           child: Text(
-            worker.lookingForWork ? 'Available' : 'Busy',
+            worker.isAvailable ? 'Available' : 'Busy',
             style: AppTheme.caption.copyWith(
               color:
-                  worker.lookingForWork
+                  worker.isAvailable
                       ? AppTheme.successColor
                       : AppTheme.errorColor,
               fontWeight: FontWeight.w600,
@@ -325,9 +330,11 @@ class _SearchTabState extends State<SearchTab> {
           ),
         ),
         onTap: () {
-          // TODO: Navigate to worker detail screen
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Viewing ${worker.fullName}\'s profile')),
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder:
+                  (_) => WorkerDetailScreen(worker: worker, isDummy: false),
+            ),
           );
         },
       ),

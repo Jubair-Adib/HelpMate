@@ -5,6 +5,9 @@ import 'login_screen.dart';
 import 'personal_info_screen.dart';
 import 'service_history_screen.dart';
 import 'about_screen.dart';
+import 'favourites_screen.dart';
+import 'help_support_screen.dart';
+import 'privacy_security_screen.dart';
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key});
@@ -135,7 +138,14 @@ class ProfileTab extends StatelessWidget {
                     icon: Icons.favorite_outline,
                     title: 'Favorites',
                     subtitle: 'Your saved service providers',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FavouritesScreen(),
+                        ),
+                      );
+                    },
                   ),
                   _buildProfileOption(
                     icon: Icons.notifications_outlined,
@@ -147,13 +157,27 @@ class ProfileTab extends StatelessWidget {
                     icon: Icons.security,
                     title: 'Privacy & Security',
                     subtitle: 'Manage your account security',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PrivacySecurityScreen(),
+                        ),
+                      );
+                    },
                   ),
                   _buildProfileOption(
                     icon: Icons.help_outline,
                     title: 'Help & Support',
                     subtitle: 'Get help and contact support',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const HelpSupportScreen(),
+                        ),
+                      );
+                    },
                   ),
                   _buildProfileOption(
                     icon: Icons.info_outline,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/theme.dart';
 import '../services/api_service.dart';
 import '../models/category.dart';
+import '../models/worker.dart';
 import 'worker_detail_screen.dart';
 
 class WorkerListScreen extends StatefulWidget {
@@ -15,7 +16,7 @@ class WorkerListScreen extends StatefulWidget {
 
 class _WorkerListScreenState extends State<WorkerListScreen> {
   final ApiService _apiService = ApiService();
-  List<Map<String, dynamic>> _workers = [];
+  List<Worker> _workers = [];
   bool _isLoading = true;
   String? _error;
 
@@ -118,7 +119,7 @@ class _WorkerListScreenState extends State<WorkerListScreen> {
     );
   }
 
-  Widget _buildWorkerCard(Map<String, dynamic> worker) {
+  Widget _buildWorkerCard(Worker worker) {
     return Card(
       margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
       elevation: 4,
@@ -142,8 +143,7 @@ class _WorkerListScreenState extends State<WorkerListScreen> {
                 radius: 32,
                 backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
                 child: Text(
-                  worker['full_name']?.split(' ').map((e) => e[0]).join('') ??
-                      'W',
+                  worker.fullName.split(' ').map((e) => e[0]).join(''),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -159,7 +159,7 @@ class _WorkerListScreenState extends State<WorkerListScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      worker['full_name'] ?? 'Unknown Worker',
+                      worker.fullName,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -167,8 +167,8 @@ class _WorkerListScreenState extends State<WorkerListScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      worker['skills'] != null
-                          ? (worker['skills'] as List).join(', ')
+                      worker.skills != null && worker.skills!.isNotEmpty
+                          ? worker.skills!.join(', ')
                           : 'No skills listed',
                       style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                       maxLines: 2,
@@ -180,11 +180,11 @@ class _WorkerListScreenState extends State<WorkerListScreen> {
                         Icon(Icons.star, size: 16, color: Colors.amber),
                         const SizedBox(width: 4),
                         Text(
-                          (worker['rating'] ?? 0.0).toString(),
+                          worker.rating.toString(),
                           style: TextStyle(fontSize: 14),
                         ),
                         Text(
-                          ' (${worker['total_reviews'] ?? 0} reviews)',
+                          ' (${worker.totalReviews} reviews)',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -192,7 +192,7 @@ class _WorkerListScreenState extends State<WorkerListScreen> {
                         ),
                         const Spacer(),
                         Text(
-                          '\$${worker['hourly_rate'] ?? 0}/hr',
+                          '\$${worker.hourlyRate ?? 0}/hr',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: Theme.of(context).primaryColor,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../constants/theme.dart';
 import '../services/api_service.dart';
+import 'payment_processing_screen.dart';
+import 'review_dialog_screen.dart';
 
 class ServiceHistoryScreen extends StatefulWidget {
   const ServiceHistoryScreen({super.key});
@@ -63,6 +65,37 @@ class _ServiceHistoryScreenState extends State<ServiceHistoryScreen> {
     } catch (e) {
       return dateString;
     }
+  }
+
+  void _retryPayment(Map<String, dynamic> order) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (_) => PaymentProcessingScreen(
+              orderDetails: order,
+              workerName: order['worker']?['full_name'] ?? 'Worker',
+              totalAmount: (order['total_amount'] ?? 0).toDouble(),
+            ),
+      ),
+    );
+  }
+
+  void _showReviewDialog(Map<String, dynamic> order) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => ReviewDialogScreen(
+            orderId: order['id'],
+            workerName: order['worker']?['full_name'] ?? 'Worker',
+            workerId: order['worker_id'],
+          ),
+    ).then((result) {
+      if (result == true) {
+        // Refresh the service history after successful review
+        _loadServiceHistory();
+      }
+    });
   }
 
   @override
@@ -196,7 +229,7 @@ class _ServiceHistoryScreenState extends State<ServiceHistoryScreen> {
                   const SizedBox(width: AppTheme.spacingS),
                   Expanded(
                     child: Text(
-                      order['service']['name'] ?? 'Unknown Service',
+                      order['service']['category']['name'] ?? 'Unknown',
                       style: AppTheme.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -298,6 +331,45 @@ class _ServiceHistoryScreenState extends State<ServiceHistoryScreen> {
                   ),
               ],
             ),
+
+            // Payment retry button for pending orders with pay_in_advance
+            if (order['status'] == 'pending' &&
+                order['payment_method'] == 'pay_in_advance')
+              Padding(
+                padding: const EdgeInsets.only(top: AppTheme.spacingM),
+                child: ElevatedButton.icon(
+                  onPressed: () => _retryPayment(order),
+                  icon: const Icon(Icons.payment, size: 16),
+                  label: const Text('Complete Payment'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacingM,
+                      vertical: AppTheme.spacingS,
+                    ),
+                  ),
+                ),
+              ),
+
+            // Review button for completed orders
+            if (order['status'] == 'completed')
+              Padding(
+                padding: const EdgeInsets.only(top: AppTheme.spacingM),
+                child: ElevatedButton.icon(
+                  onPressed: () => _showReviewDialog(order),
+                  icon: const Icon(Icons.rate_review, size: 16),
+                  label: const Text('Review'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacingM,
+                      vertical: AppTheme.spacingS,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

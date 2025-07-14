@@ -12,6 +12,11 @@ class WorkerBase(BaseModel):
 
 class WorkerCreate(WorkerBase):
     password: str
+    bio: Optional[str] = None
+    skills: Optional[List[str]] = None
+    hourly_rate: Optional[float] = None
+    experience_years: Optional[int] = None
+    is_available: bool = True
 
 
 class WorkerUpdate(BaseModel):

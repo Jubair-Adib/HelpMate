@@ -7,6 +7,7 @@ from app.models.user import User
 from app.models.worker import Worker
 from app.schemas.user import UserCreate, UserLogin, UserResponse, Token, UserUpdate
 from app.schemas.worker import WorkerCreate, WorkerLogin, WorkerResponse
+from app.services.worker_service import WorkerService
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
@@ -40,7 +41,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/register/worker", response_model=WorkerResponse)
 def register_worker(worker: WorkerCreate, db: Session = Depends(get_db)):
-    """Register a new worker"""
+    """Register a new worker with automatic service creation"""
     # Check if email already exists
     db_worker = db.query(Worker).filter(Worker.email == worker.email).first()
     if db_worker:
@@ -49,19 +50,19 @@ def register_worker(worker: WorkerCreate, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
     
-    # Create new worker
-    hashed_password = get_password_hash(worker.password)
-    db_worker = Worker(
-        email=worker.email,
-        full_name=worker.full_name,
-        hashed_password=hashed_password,
-        phone_number=worker.phone_number,
-        address=worker.address
-    )
-    db.add(db_worker)
-    db.commit()
-    db.refresh(db_worker)
-    return db_worker
+    # Create worker with services using the service
+    worker_data = worker.dict()
+    worker_data['hashed_password'] = get_password_hash(worker.password)
+    
+    try:
+        db_worker = WorkerService.create_worker_with_services(db, worker_data)
+        return db_worker
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating worker: {str(e)}"
+        )
 
 
 @router.post("/login/user", response_model=Token)

@@ -11,6 +11,7 @@ class OrderBase(BaseModel):
     description: Optional[str] = None
     hours: Optional[int] = 1
     scheduled_date: Optional[datetime] = None
+    payment_method: Optional[str] = "pay_in_person"  # pay_in_advance, pay_in_person
 
 
 class OrderCreate(OrderBase):
@@ -30,6 +31,7 @@ class OrderResponse(OrderBase):
     worker_id: int
     total_amount: float
     status: str
+    payment_method: str
     completed_date: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
@@ -42,7 +44,6 @@ class OrderResponse(OrderBase):
 
 
 class ReviewCreate(BaseModel):
-    order_id: int
     rating: int  # 1-5
     comment: Optional[str] = None
 

@@ -235,6 +235,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategoryCard(Map<String, dynamic> category) {
+    final iconData = _getCategoryIcon(category['name']);
+    final color = _getCategoryColor(category['name']);
     return GestureDetector(
       onTap: () {
         // Navigate to worker list with dummy data
@@ -273,14 +275,10 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF1565C0).withOpacity(0.1),
+                color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
-                Icons.category,
-                size: 32,
-                color: Color(0xFF1565C0),
-              ),
+              child: Icon(iconData, size: 32, color: color),
             ),
             const SizedBox(height: 12),
             Text(
@@ -296,5 +294,47 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  IconData _getCategoryIcon(String? name) {
+    final n = (name ?? '').toLowerCase();
+    if (n.contains('babysit')) return Icons.child_care;
+    if (n.contains('ac repair')) return Icons.ac_unit;
+    if (n.contains('tutor')) return Icons.school;
+    if (n.contains('physician') ||
+        n.contains('doctor') ||
+        n.contains('medical'))
+      return Icons.medical_services;
+    if (n.contains('clean')) return Icons.cleaning_services;
+    if (n.contains('plumb')) return Icons.plumbing;
+    if (n.contains('electric')) return Icons.electrical_services;
+    if (n.contains('carpent') || n.contains('wood')) return Icons.handyman;
+    if (n.contains('garden')) return Icons.eco;
+    if (n.contains('cook') || n.contains('chef') || n.contains('food'))
+      return Icons.restaurant;
+    if (n.contains('driver') || n.contains('drive')) return Icons.drive_eta;
+    if (n.contains('security') || n.contains('guard')) return Icons.security;
+    return Icons.category;
+  }
+
+  Color _getCategoryColor(String? name) {
+    final n = (name ?? '').toLowerCase();
+    if (n.contains('babysit')) return Colors.pink;
+    if (n.contains('ac repair')) return Colors.blue;
+    if (n.contains('tutor')) return Colors.orange;
+    if (n.contains('physician') ||
+        n.contains('doctor') ||
+        n.contains('medical'))
+      return Colors.red;
+    if (n.contains('clean')) return Colors.green;
+    if (n.contains('plumb')) return Colors.indigo;
+    if (n.contains('electric')) return Colors.amber;
+    if (n.contains('carpent') || n.contains('wood')) return Colors.brown;
+    if (n.contains('garden')) return Colors.lightGreen;
+    if (n.contains('cook') || n.contains('chef') || n.contains('food'))
+      return Colors.deepOrange;
+    if (n.contains('driver') || n.contains('drive')) return Colors.teal;
+    if (n.contains('security') || n.contains('guard')) return Colors.grey;
+    return const Color(0xFF1565C0);
   }
 }

@@ -10,6 +10,8 @@ from app.schemas.worker import (
 )
 from app.schemas.order import ReviewResponse
 from app.routers.auth import get_current_user
+from app.services.worker_service import WorkerService
+from sqlalchemy.orm import joinedload
 
 router = APIRouter(prefix="/workers", tags=["workers"])
 
@@ -42,8 +44,14 @@ async def update_work_profile(
     db: Session = Depends(get_db)
 ):
     """Update worker's work profile"""
+    old_skills = current_worker.skills
+    
     for field, value in work_profile.dict(exclude_unset=True).items():
         setattr(current_worker, field, value)
+    
+    # If skills were updated, update services as well
+    if 'skills' in work_profile.dict(exclude_unset=True) and work_profile.skills != old_skills:
+        WorkerService.update_worker_services(db, current_worker.id, work_profile.skills or [])
     
     db.commit()
     db.refresh(current_worker)
@@ -64,7 +72,8 @@ def get_workers(
     
     if category_id:
         # Filter by category through services
-        query = query.join(Worker.services).filter(Worker.services.any(category_id=category_id))
+        from app.models.service import Service
+        query = query.join(Service, Worker.id == Service.worker_id).filter(Service.category_id == category_id)
     
     workers = query.all()
     return workers
@@ -171,5 +180,7 @@ def get_worker_reviews(worker_id: int, db: Session = Depends(get_db)):
             detail="Worker not found"
         )
     
-    reviews = db.query(Review).filter(Review.worker_id == worker_id).all()
+    reviews = db.query(Review).options(
+        joinedload(Review.user)
+    ).filter(Review.worker_id == worker_id).all()
     return reviews 

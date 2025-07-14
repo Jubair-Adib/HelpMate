@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 from app.core.database import get_db
 from app.models.order import Order, Review
 from app.models.user import User
+from app.models.service import Service
 from app.schemas.order import OrderCreate, OrderUpdate, OrderResponse, ReviewCreate, ReviewResponse
 from app.routers.auth import get_current_user
 
@@ -26,6 +27,8 @@ async def create_order(
     
     # Check if the service exists and is available
     from app.models.service import Service
+    from app.models.worker import Worker
+    
     service = db.query(Service).filter(Service.id == order.service_id).first()
     if not service:
         raise HTTPException(
@@ -39,6 +42,59 @@ async def create_order(
             detail="Service is not available"
         )
     
+    # Check if worker exists and is available
+    worker = db.query(Worker).filter(Worker.id == service.worker_id).first()
+    if not worker:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Worker not found"
+        )
+    
+    if not worker.is_available:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Worker is currently not available for booking"
+        )
+    
+    # Check for time conflicts if scheduled_date is provided
+    if order.scheduled_date:
+        # Check if worker has any overlapping orders at the same time
+        from datetime import timedelta
+        
+        # Calculate the end time of the requested booking
+        end_time = order.scheduled_date + timedelta(hours=order.hours)
+        
+        # Check for overlapping orders using a subquery approach
+        from sqlalchemy import text
+        
+        # Use raw SQL for the complex time overlap check
+        overlap_query = text("""
+            SELECT * FROM orders 
+            WHERE worker_id = :worker_id 
+            AND status IN ('pending', 'accepted', 'in_progress')
+            AND scheduled_date IS NOT NULL
+            AND (
+                (scheduled_date <= :new_start AND datetime(scheduled_date, '+' || hours || ' hours') > :new_start)
+                OR (scheduled_date < :new_end AND datetime(scheduled_date, '+' || hours || ' hours') >= :new_end)
+                OR (scheduled_date >= :new_start AND datetime(scheduled_date, '+' || hours || ' hours') <= :new_end)
+            )
+        """)
+        
+        conflicting_orders = db.execute(
+            overlap_query,
+            {
+                'worker_id': worker.id,
+                'new_start': order.scheduled_date,
+                'new_end': end_time
+            }
+        ).first()
+        
+        if conflicting_orders:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Sorry, the worker is already booked at this time. Please choose another date and time."
+            )
+    
     # Calculate total amount
     total_amount = service.hourly_rate * order.hours
     
@@ -50,9 +106,11 @@ async def create_order(
         description=order.description,
         hours=order.hours,
         total_amount=total_amount,
+        payment_method=order.payment_method,
         scheduled_date=order.scheduled_date
     )
     db.add(db_order)
+    
     db.commit()
     db.refresh(db_order)
     return db_order
@@ -70,7 +128,11 @@ async def get_orders(
             detail="Only users can access this endpoint"
         )
     
-    orders = db.query(Order).filter(Order.user_id == current_user.id).all()
+    orders = db.query(Order).options(
+        joinedload(Order.service).joinedload(Service.category),
+        joinedload(Order.worker),
+        joinedload(Order.user)
+    ).filter(Order.user_id == current_user.id).all()
     return orders
 
 
@@ -87,7 +149,11 @@ async def get_order(
             detail="Only users can access this endpoint"
         )
     
-    order = db.query(Order).filter(
+    order = db.query(Order).options(
+        joinedload(Order.service).joinedload(Service.category),
+        joinedload(Order.worker),
+        joinedload(Order.user)
+    ).filter(
         Order.id == order_id,
         Order.user_id == current_user.id
     ).first()
@@ -166,6 +232,7 @@ async def cancel_order(
         )
     
     db_order.status = "cancelled"
+    
     db.commit()
     return {"message": "Order cancelled successfully"}
 
@@ -256,11 +323,19 @@ async def get_review(
             detail="Only users can access this endpoint"
         )
     
-    review = db.query(Review).filter(
-        Review.order_id == order_id,
-        Review.user_id == current_user.id
+    # Check if order exists and belongs to the user
+    order = db.query(Order).filter(
+        Order.id == order_id,
+        Order.user_id == current_user.id
     ).first()
     
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
+    
+    review = db.query(Review).filter(Review.order_id == order_id).first()
     if not review:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

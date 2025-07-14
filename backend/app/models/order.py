@@ -17,6 +17,7 @@ class Order(Base):
     hours = Column(Integer, default=1)
     total_amount = Column(Float, nullable=False)
     status = Column(String, default="pending")  # pending, accepted, in_progress, completed, cancelled
+    payment_method = Column(String, default="pay_in_person")  # pay_in_advance, pay_in_person
     
     # Scheduling
     scheduled_date = Column(DateTime)

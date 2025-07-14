@@ -24,5 +24,5 @@ class Service(Base):
     
     # Relationships
     category = relationship("Category", back_populates="services")
-    worker = relationship("Worker", back_populates="services")
+    worker = relationship("Worker")
     orders = relationship("Order", back_populates="service") 

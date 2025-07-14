@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/worker.dart';
 
 class ApiService {
   static const String baseUrl = 'http://10.0.2.2:8000';
@@ -199,7 +200,7 @@ class ApiService {
   }
 
   // Workers APIs
-  Future<List<Map<String, dynamic>>> getWorkers({String? categoryId}) async {
+  Future<List<Worker>> getWorkers({String? categoryId}) async {
     try {
       String endpoint = '/v1/workers';
       if (categoryId != null) {
@@ -208,7 +209,7 @@ class ApiService {
       final response = await _get(endpoint);
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
+        return data.map((json) => Worker.fromJson(json)).toList();
       } else {
         throw Exception('Failed to fetch workers: ${response.body}');
       }
@@ -217,11 +218,12 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> getWorkerProfile(int workerId) async {
+  Future<Worker> getWorkerProfile(int workerId) async {
     try {
       final response = await _get('/v1/workers/$workerId');
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final data = jsonDecode(response.body);
+        return Worker.fromJson(data);
       } else {
         throw Exception('Failed to fetch worker profile: ${response.body}');
       }
@@ -329,17 +331,21 @@ class ApiService {
 
   Future<Map<String, dynamic>> createOrder(Map<String, dynamic> data) async {
     try {
-      final response = await _post(
-        '/v1/orders/',
-        data,
-      ); // <-- Added trailing slash
-      if (response.statusCode == 201) {
+      final response = await _post('/v1/orders/', data);
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
+        // Try to parse error message from response
+        try {
+          final errorData = jsonDecode(response.body);
+          if (errorData is Map && errorData['detail'] != null) {
+            throw Exception(errorData['detail']);
+          }
+        } catch (_) {}
         throw Exception('Failed to create order: ${response.body}');
       }
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw Exception(e.toString());
     }
   }
 
@@ -482,6 +488,76 @@ class ApiService {
         return jsonDecode(response.body);
       } else {
         throw Exception('Failed to send message: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Favorites APIs
+  Future<Map<String, dynamic>> addToFavorites(int workerId) async {
+    try {
+      final response = await _post('/v1/favorites/', {'worker_id': workerId});
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to add to favorites: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<void> removeFromFavorites(int workerId) async {
+    try {
+      final response = await _delete('/v1/favorites/$workerId');
+      if (response.statusCode != 200) {
+        throw Exception('Failed to remove from favorites: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getFavorites() async {
+    try {
+      final response = await _get('/v1/favorites/');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to fetch favorites: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<bool> checkFavorite(int workerId) async {
+    try {
+      final response = await _get('/v1/favorites/check/$workerId');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['is_favorite'] ?? false;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Review creation for completed orders
+  Future<Map<String, dynamic>> createOrderReview(
+    int orderId,
+    Map<String, dynamic> reviewData,
+  ) async {
+    try {
+      final response = await _post('/v1/orders/$orderId/review', reviewData);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to create review: ${response.body}');
       }
     } catch (e) {
       throw Exception('Network error: $e');

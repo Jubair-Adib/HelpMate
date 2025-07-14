@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -92,33 +93,35 @@ class AboutScreen extends StatelessWidget {
                   name: 'Farhana Alam',
                   university: 'University of Dhaka',
                   email: 'falam3399@gmail.com',
-                  github: 'github.com/mastermind-fa',
-                  linkedin: 'linkedin.com/in/mastermindfa',
+                  github: 'https://www.github.com/mastermind-fa',
+                  linkedin: 'https://www.linkedin.com/in/mastermindfa',
                   imagePath: 'assets/images/farhana.png', // Add photo here
                 ),
                 _TeamMemberCard(
                   name: 'Jubair Ahammed Akter',
                   university: 'University of Dhaka',
-                  email: 'jubairadib@gmail.com',
-                  github: 'github.com/jubairadib',
-                  linkedin: 'linkedin.com/in/jubairadib',
-                  imagePath: 'assets/images/jubair.jpg', // Add photo here
+                  email: 'akteradib007@gmail.com',
+                  github: 'https://www.github.com/Jubair-Adib',
+                  linkedin:
+                      'https://www.linkedin.com/in/jubair-ahammad-akter-0b0aa3316/',
+                  imagePath: 'assets/images/jubair.png', // Add photo here
                 ),
                 _TeamMemberCard(
                   name: 'NMR Masum',
                   university: 'University of Dhaka',
-                  email: 'masum@gmail.com',
-                  github: 'github.com/masum',
-                  linkedin: 'linkedin.com/masum',
-                  imagePath: 'assets/images/masum.jpg', // Add photo here
+                  email: 'nmrmasumbdkk531@gmail.com',
+                  github: 'https://www.github.com/masum',
+                  linkedin: 'https://www.linkedin.com/in/nmr-masum-778a3b2a0/',
+                  imagePath: 'assets/images/masum.png', // Add photo here
                 ),
                 _TeamMemberCard(
                   name: 'Shakin Reza Kabbo',
                   university: 'University of Dhaka',
-                  email: 'kabbo@gmail.com',
-                  github: 'github.com/kabbo',
-                  linkedin: 'linkedin.com/kabbo',
-                  imagePath: 'assets/images/kabbo.jpg', // Add photo here
+                  email: 'kabboshakin088@gmail.com',
+                  github: 'https://github.com/shakinalamkabbo',
+                  linkedin:
+                      'https://www.linkedin.com/in/shakin-alam-kabbo-102a69372/',
+                  imagePath: 'assets/images/kabbo.png', // Add photo here
                 ),
               ],
             ),
@@ -146,6 +149,13 @@ class _TeamMemberCard extends StatelessWidget {
   final String linkedin;
   final String? imagePath;
 
+  void _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -155,6 +165,7 @@ class _TeamMemberCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Team member photo
             CircleAvatar(
@@ -192,20 +203,26 @@ class _TeamMemberCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Icon(Icons.code, size: 18, color: Colors.black45),
                       const SizedBox(width: 6),
-                      Text(
-                        github,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.black87,
+                      InkWell(
+                        onTap: () => _launchUrl(github),
+                        child: const Text(
+                          'GitHub',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                          ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Icon(
                         Icons.business,
@@ -213,11 +230,15 @@ class _TeamMemberCard extends StatelessWidget {
                         color: Colors.black45,
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        linkedin,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.black87,
+                      InkWell(
+                        onTap: () => _launchUrl(linkedin),
+                        child: const Text(
+                          'LinkedIn',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                          ),
                         ),
                       ),
                     ],

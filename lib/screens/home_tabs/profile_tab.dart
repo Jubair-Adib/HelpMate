@@ -5,7 +5,6 @@ import '../../providers/auth_provider.dart';
 import '../../models/user.dart';
 import '../edit_profile_screen.dart';
 import '../login_screen.dart';
-import 'package:flutter/services.dart';
 
 class AboutHelpmateScreen extends StatelessWidget {
   const AboutHelpmateScreen({super.key});
