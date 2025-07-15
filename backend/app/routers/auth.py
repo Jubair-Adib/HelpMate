@@ -1,14 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File, BackgroundTasks
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import verify_password, get_password_hash, create_access_token, verify_token
-from app.models.user import User
+from app.models.user import User, PasswordReset, EmailVerificationToken
 from app.models.worker import Worker
-from app.schemas.user import UserCreate, UserLogin, UserResponse, Token, UserUpdate, ChangePasswordRequest as UserChangePasswordRequest
-from app.schemas.worker import WorkerCreate, WorkerLogin, WorkerResponse, WorkerUpdate, ChangePasswordRequest as WorkerChangePasswordRequest
+from app.schemas.user import UserCreate, UserLogin, UserResponse, Token, UserUpdate, ChangePasswordRequest as UserChangePasswordRequest, ForgotPasswordRequest as UserForgotPasswordRequest, ResetPasswordRequest as UserResetPasswordRequest
+from app.schemas.worker import WorkerCreate, WorkerLogin, WorkerResponse, WorkerUpdate, ChangePasswordRequest as WorkerChangePasswordRequest, ForgotPasswordRequest as WorkerForgotPasswordRequest, ResetPasswordRequest as WorkerResetPasswordRequest
 from app.services.worker_service import WorkerService
+from app.services.email_service import email_service
 import os
+import asyncio
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
@@ -29,7 +31,7 @@ def get_public_image_url(image_path: str, request: Request) -> str:
 
 
 @router.post("/register/user", response_model=UserResponse)
-def register_user(user: UserCreate, db: Session = Depends(get_db)):
+def register_user(user: UserCreate, db: Session = Depends(get_db), background_tasks: BackgroundTasks = None):
     """Register a new user"""
     # Check if email already exists
     db_user = db.query(User).filter(User.email == user.email).first()
@@ -46,16 +48,23 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
         full_name=user.full_name,
         hashed_password=hashed_password,
         phone_number=user.phone_number,
-        address=user.address
+        address=user.address,
+        is_verified=False
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    # Create verification token and send email
+    token_record = email_service.create_verification_token(db, db_user.id, "user")
+    if background_tasks is not None:
+        background_tasks.add_task(
+            lambda: asyncio.run(email_service.send_verification_email(db_user.email, token_record.token, "user"))
+        )
     return db_user
 
 
 @router.post("/register/worker", response_model=WorkerResponse)
-def register_worker(worker: WorkerCreate, db: Session = Depends(get_db)):
+def register_worker(worker: WorkerCreate, db: Session = Depends(get_db), background_tasks: BackgroundTasks = None):
     """Register a new worker with automatic service creation. Now supports category_id for direct category selection."""
     # Check if email already exists
     db_worker = db.query(Worker).filter(Worker.email == worker.email).first()
@@ -68,9 +77,16 @@ def register_worker(worker: WorkerCreate, db: Session = Depends(get_db)):
     # Create worker with services using the service
     worker_data = worker.dict()
     worker_data['hashed_password'] = get_password_hash(worker.password)
+    worker_data['is_verified'] = False
     
     try:
         db_worker = WorkerService.create_worker_with_services(db, worker_data)
+        # Create verification token and send email
+        token_record = email_service.create_verification_token(db, db_worker.id, "worker")
+        if background_tasks is not None:
+            background_tasks.add_task(
+                lambda: asyncio.run(email_service.send_verification_email(db_worker.email, token_record.token, "worker"))
+            )
         return db_worker
     except Exception as e:
         db.rollback()
@@ -95,6 +111,12 @@ def login_user(user_credentials: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Inactive user"
+        )
+    
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email before logging in."
         )
     
     access_token = create_access_token(
@@ -125,6 +147,12 @@ def login_worker(worker_credentials: WorkerLogin, db: Session = Depends(get_db))
             detail="Inactive worker"
         )
     
+    if not worker.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email before logging in."
+        )
+    
     access_token = create_access_token(
         data={"sub": worker.email, "user_type": "worker", "user_id": worker.id}
     )
@@ -134,6 +162,166 @@ def login_worker(worker_credentials: WorkerLogin, db: Session = Depends(get_db))
         "user_type": "worker",
         "user_id": worker.id
     }
+
+
+@router.post("/forgot-password/user")
+async def forgot_password_user(request: UserForgotPasswordRequest, db: Session = Depends(get_db)):
+    """Send password reset email for user"""
+    # Check if user exists
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user:
+        # Don't reveal if email exists or not for security
+        return {"message": "If the email exists, a reset code has been sent."}
+    
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Account is inactive"
+        )
+    
+    try:
+        # Create reset record
+        reset_record = email_service.create_reset_record(db, request.email, "user")
+        
+        # Send email
+        email_sent = await email_service.send_reset_email(
+            request.email, 
+            reset_record.reset_code, 
+            "user"
+        )
+        
+        if email_sent:
+            return {"message": "Password reset code sent to your email."}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send reset email"
+            )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error processing request: {str(e)}"
+        )
+
+
+@router.post("/forgot-password/worker")
+async def forgot_password_worker(request: WorkerForgotPasswordRequest, db: Session = Depends(get_db)):
+    """Send password reset email for worker"""
+    # Check if worker exists
+    worker = db.query(Worker).filter(Worker.email == request.email).first()
+    if not worker:
+        # Don't reveal if email exists or not for security
+        return {"message": "If the email exists, a reset code has been sent."}
+    
+    if not worker.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Account is inactive"
+        )
+    
+    try:
+        # Create reset record
+        reset_record = email_service.create_reset_record(db, request.email, "worker")
+        
+        # Send email
+        email_sent = await email_service.send_reset_email(
+            request.email, 
+            reset_record.reset_code, 
+            "worker"
+        )
+        
+        if email_sent:
+            return {"message": "Password reset code sent to your email."}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send reset email"
+            )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error processing request: {str(e)}"
+        )
+
+
+@router.post("/reset-password/user")
+async def reset_password_user(request: UserResetPasswordRequest, db: Session = Depends(get_db)):
+    """Reset user password using reset code"""
+    # Verify reset code
+    reset_record = email_service.verify_reset_code(
+        db, request.email, request.reset_code, "user"
+    )
+    
+    if not reset_record:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset code"
+        )
+    
+    # Get user
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    try:
+        # Update password
+        user.hashed_password = get_password_hash(request.new_password)
+        
+        # Mark reset code as used
+        email_service.mark_reset_code_used(db, reset_record)
+        
+        db.commit()
+        
+        return {"message": "Password reset successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error resetting password: {str(e)}"
+        )
+
+
+@router.post("/reset-password/worker")
+async def reset_password_worker(request: WorkerResetPasswordRequest, db: Session = Depends(get_db)):
+    """Reset worker password using reset code"""
+    # Verify reset code
+    reset_record = email_service.verify_reset_code(
+        db, request.email, request.reset_code, "worker"
+    )
+    
+    if not reset_record:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset code"
+        )
+    
+    # Get worker
+    worker = db.query(Worker).filter(Worker.email == request.email).first()
+    if not worker:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Worker not found"
+        )
+    
+    try:
+        # Update password
+        worker.hashed_password = get_password_hash(request.new_password)
+        
+        # Mark reset code as used
+        email_service.mark_reset_code_used(db, reset_record)
+        
+        db.commit()
+        
+        return {"message": "Password reset successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error resetting password: {str(e)}"
+        )
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
@@ -255,9 +443,11 @@ async def update_worker_profile(
     worker_dict["image"] = get_public_image_url(current_user.image, request) if current_user.image else None
     return worker_dict
 
+
 @router.post("/worker/upload-profile-image")
 async def upload_worker_profile_image(request: Request, file: UploadFile = File(...)):
     """Upload a profile image for the worker. Returns the public URL."""
+    # Save file to static directory
     static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '..', 'static')
     os.makedirs(static_dir, exist_ok=True)
     file_ext = os.path.splitext(file.filename)[1]
@@ -267,7 +457,8 @@ async def upload_worker_profile_image(request: Request, file: UploadFile = File(
         content = await file.read()
         f.write(content)
     public_url = f"{request.url.scheme}://{request.url.netloc}/static/{filename}"
-    return {"url": public_url} 
+    return {"url": public_url}
+
 
 @router.post("/user/change-password")
 async def change_user_password(
@@ -275,15 +466,24 @@ async def change_user_password(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    """Change user password"""
     if not isinstance(current_user, User):
-        raise HTTPException(status_code=403, detail="Only users can change password")
-    if not verify_password(data.old_password, current_user.hashed_password):
-        raise HTTPException(status_code=400, detail="Old password is incorrect")
-    if data.new_password != data.confirm_password:
-        raise HTTPException(status_code=400, detail="New passwords do not match")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only users can access this endpoint"
+        )
+    
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect"
+        )
+    
     current_user.hashed_password = get_password_hash(data.new_password)
     db.commit()
-    return {"detail": "Password changed successfully"}
+    
+    return {"message": "Password changed successfully"}
+
 
 @router.post("/worker/change-password")
 async def change_worker_password(
@@ -291,12 +491,44 @@ async def change_worker_password(
     current_user: Worker = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    """Change worker password"""
     if not isinstance(current_user, Worker):
-        raise HTTPException(status_code=403, detail="Only workers can change password")
-    if not verify_password(data.old_password, current_user.hashed_password):
-        raise HTTPException(status_code=400, detail="Old password is incorrect")
-    if data.new_password != data.confirm_password:
-        raise HTTPException(status_code=400, detail="New passwords do not match")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only workers can access this endpoint"
+        )
+    
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect"
+        )
+    
     current_user.hashed_password = get_password_hash(data.new_password)
     db.commit()
-    return {"detail": "Password changed successfully"} 
+    
+    return {"message": "Password changed successfully"} 
+
+
+@router.get("/verify-email")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    # Try user first
+    record = email_service.verify_email_token(db, token, "user")
+    if record:
+        user = db.query(User).filter(User.id == record.user_id).first()
+        if user:
+            user.is_verified = True
+            email_service.mark_verification_token_used(db, record)
+            db.commit()
+            return {"message": "Email verified successfully. You can now log in."}
+    # Try worker
+    record = email_service.verify_email_token(db, token, "worker")
+    if record:
+        from app.models.worker import Worker
+        worker = db.query(Worker).filter(Worker.id == record.user_id).first()
+        if worker:
+            worker.is_verified = True
+            email_service.mark_verification_token_used(db, record)
+            db.commit()
+            return {"message": "Email verified successfully. You can now log in."}
+    raise HTTPException(status_code=400, detail="Invalid or expired verification token.") 

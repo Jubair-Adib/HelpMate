@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.user import User
@@ -8,6 +8,7 @@ from app.models.order import Order
 from app.schemas.category import CategoryCreate, CategoryResponse
 from app.routers.auth import get_current_user
 from app.models.service import Service
+import asyncio
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -57,14 +58,23 @@ def activate_worker(worker_id: int, active: bool, db: Session = Depends(get_db),
 
 # Change Order Status
 @router.put("/orders/{order_id}/status")
-def change_order_status(order_id: int, status: str, db: Session = Depends(get_db), current_user: User = Depends(admin_required)):
+def change_order_status(order_id: int, status: str, db: Session = Depends(get_db), current_user: User = Depends(admin_required), background_tasks: BackgroundTasks = None):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     if status not in ["pending", "completed", "cancelled"]:
         raise HTTPException(status_code=400, detail="Invalid status")
+    status_was_completed = order.status == "completed"
     order.status = status
     db.commit()
+    # If status changed to completed, send notification
+    if not status_was_completed and order.status == "completed" and background_tasks is not None:
+        from app.services.email_service import email_service
+        user = db.query(User).filter(User.id == order.user_id).first()
+        worker = db.query(Worker).filter(Worker.id == order.worker_id).first()
+        background_tasks.add_task(
+            lambda: asyncio.run(email_service.send_order_completed_email(user, worker, order))
+        )
     return {"success": True, "order_id": order_id, "status": order.status}
 
 # List all users

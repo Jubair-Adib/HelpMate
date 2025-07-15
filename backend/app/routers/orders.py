@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session, joinedload
 from typing import List
 from app.core.database import get_db
@@ -8,6 +8,7 @@ from app.models.service import Service
 from app.schemas.order import OrderCreate, OrderUpdate, OrderResponse, ReviewCreate, ReviewResponse
 from app.routers.auth import get_current_user
 from app.models.worker import Worker
+import asyncio
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -16,7 +17,8 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 async def create_order(
     order: OrderCreate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    background_tasks: BackgroundTasks = None
 ):
     """Create a new order (only users can create orders)"""
     # Verify the user is creating the order
@@ -114,6 +116,12 @@ async def create_order(
     
     db.commit()
     db.refresh(db_order)
+    # Send notification emails to user and worker
+    if background_tasks is not None:
+        from app.services.email_service import email_service
+        background_tasks.add_task(
+            lambda: asyncio.run(email_service.send_order_booked_email(current_user, worker, db_order))
+        )
     return db_order
 
 
@@ -173,7 +181,8 @@ async def update_order(
     order_id: int,
     order_update: OrderUpdate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    background_tasks: BackgroundTasks = None
 ):
     """Update an order (only the order owner can update)"""
     if not isinstance(current_user, User):
@@ -193,12 +202,21 @@ async def update_order(
             detail="Order not found or you don't have permission to update it"
         )
     
+    # Track if status is being set to completed
+    status_was_completed = db_order.status == "completed"
     # Update order fields
     for field, value in order_update.dict(exclude_unset=True).items():
         setattr(db_order, field, value)
-    
     db.commit()
     db.refresh(db_order)
+    # If status changed to completed, send notification
+    if not status_was_completed and db_order.status == "completed" and background_tasks is not None:
+        from app.services.email_service import email_service
+        user = db.query(User).filter(User.id == db_order.user_id).first()
+        worker = db.query(Worker).filter(Worker.id == db_order.worker_id).first()
+        background_tasks.add_task(
+            lambda: asyncio.run(email_service.send_order_completed_email(user, worker, db_order))
+        )
     return db_order
 
 

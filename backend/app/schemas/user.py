@@ -3,16 +3,12 @@ from typing import Optional
 from datetime import datetime
 
 
-class UserBase(BaseModel):
+class UserCreate(BaseModel):
     email: EmailStr
+    password: str
     full_name: str
     phone_number: Optional[str] = None
     address: Optional[str] = None
-    image: Optional[str] = None  # Optional profile image
-
-
-class UserCreate(UserBase):
-    password: str
 
 
 class UserLogin(BaseModel):
@@ -20,53 +16,46 @@ class UserLogin(BaseModel):
     password: str
 
 
-class UserUpdate(BaseModel):
-    full_name: Optional[str] = None
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    full_name: str
     phone_number: Optional[str] = None
     address: Optional[str] = None
-    image: Optional[str] = None  # Optional profile image
-
-
-class UserResponse(UserBase):
-    id: int
     is_active: bool
     is_verified: bool
     is_admin: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
-    
+    image: Optional[str] = None
+
     class Config:
         from_attributes = True
 
 
-class UserFavoriteCreate(BaseModel):
-    worker_id: int
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
 
 
-class UserFavoriteResponse(BaseModel):
-    id: int
-    user_id: int
-    worker_id: int
-    created_at: datetime
-    worker: dict  # Will contain worker details
-    
-    class Config:
-        from_attributes = True
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    reset_code: str
+    new_password: str
 
 
 class Token(BaseModel):
     access_token: str
     token_type: str
-    user_type: str  # "user" or "worker"
-    user_id: int
-
-
-class TokenData(BaseModel):
-    email: Optional[str] = None
-    user_type: Optional[str] = None 
-
-
-class ChangePasswordRequest(BaseModel):
-    old_password: str
-    new_password: str
-    confirm_password: str 
+    user_type: str
+    user_id: int 

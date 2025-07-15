@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     # App
     app_name: str = "HelpMate API"
     debug: bool = True
+    base_url: str = "http://localhost:8000"
     
     class Config:
         env_file = ".env"

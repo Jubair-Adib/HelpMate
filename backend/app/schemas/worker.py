@@ -3,44 +3,34 @@ from typing import Optional, List
 from datetime import datetime
 
 
-class WorkerBase(BaseModel):
+class WorkerCreate(BaseModel):
     email: EmailStr
+    password: str
     full_name: str
     phone_number: Optional[str] = None
     address: Optional[str] = None
-    image: Optional[str] = None  # Optional profile image
-
-
-class WorkerCreate(WorkerBase):
-    password: str
     bio: Optional[str] = None
-    skills: Optional[List[str]] = None
-    hourly_rate: Optional[float] = None
+    skills: List[str] = []
+    hourly_rate: float
     experience_years: Optional[int] = None
-    is_available: bool = True
-    category_id: Optional[int] = None  # Added for worker registration
+    category_id: int  # For automatic service creation
 
 
-class WorkerUpdate(BaseModel):
-    full_name: Optional[str] = None
+class WorkerLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class WorkerResponse(BaseModel):
+    id: int
+    email: str
+    full_name: str
     phone_number: Optional[str] = None
     address: Optional[str] = None
-    image: Optional[str] = None  # Optional profile image
-
-
-class WorkProfileUpdate(BaseModel):
+    image: Optional[str] = None
     bio: Optional[str] = None
-    skills: Optional[List[str]] = None
-    hourly_rate: Optional[float] = None
-    experience_years: Optional[int] = None
-    is_available: Optional[bool] = None
-
-
-class WorkerResponse(WorkerBase):
-    id: int
-    bio: Optional[str] = None
-    skills: Optional[List[str]] = None
-    hourly_rate: Optional[float] = None
+    skills: List[str] = []
+    hourly_rate: float
     experience_years: Optional[int] = None
     is_available: bool
     rating: float
@@ -49,37 +39,32 @@ class WorkerResponse(WorkerBase):
     is_active: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
-    
+
     class Config:
         from_attributes = True
 
 
-class WorkerLogin(BaseModel):
-    email: EmailStr
-    password: str
-
-
-class WorkerOrderCreate(BaseModel):
-    service_id: int
-    description: Optional[str] = None
-    scheduled_date: Optional[datetime] = None
-
-
-class WorkerOrderResponse(BaseModel):
-    id: int
-    worker_id: int
-    service_id: int
-    status: str
-    description: Optional[str] = None
-    scheduled_date: Optional[datetime] = None
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-    
-    class Config:
-        from_attributes = True 
+class WorkerUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
+    bio: Optional[str] = None
+    skills: Optional[List[str]] = None
+    hourly_rate: Optional[float] = None
+    experience_years: Optional[int] = None
+    is_available: Optional[bool] = None
 
 
 class ChangePasswordRequest(BaseModel):
-    old_password: str
+    current_password: str
     new_password: str
-    confirm_password: str 
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    reset_code: str
+    new_password: str 

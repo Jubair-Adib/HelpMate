@@ -125,6 +125,89 @@ class ApiService {
     }
   }
 
+  // Forgot Password APIs
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    try {
+      // Try user first, then worker if user doesn't exist
+      var response = await http.post(
+        Uri.parse('$apiUrl/v1/auth/forgot-password/user'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else if (response.statusCode == 400) {
+        // Try worker endpoint
+        response = await http.post(
+          Uri.parse('$apiUrl/v1/auth/forgot-password/worker'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'email': email}),
+        );
+
+        if (response.statusCode == 200) {
+          return jsonDecode(response.body);
+        }
+      }
+
+      // If we get here, neither user nor worker exists
+      return {'message': 'If the email exists, a reset code has been sent.'};
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> resetPassword({
+    required String email,
+    required String resetCode,
+    required String newPassword,
+  }) async {
+    try {
+      // Try user first, then worker if user doesn't exist
+      var response = await http.post(
+        Uri.parse('$apiUrl/v1/auth/reset-password/user'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'reset_code': resetCode,
+          'new_password': newPassword,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else if (response.statusCode == 400) {
+        // Try worker endpoint
+        response = await http.post(
+          Uri.parse('$apiUrl/v1/auth/reset-password/worker'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'email': email,
+            'reset_code': resetCode,
+            'new_password': newPassword,
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          return jsonDecode(response.body);
+        }
+      }
+
+      // Parse error message
+      String errorMsg = 'Password reset failed';
+      try {
+        final errorData =
+            response.body.isNotEmpty ? jsonDecode(response.body) : null;
+        if (errorData is Map && errorData['detail'] != null) {
+          errorMsg = errorData['detail'].toString();
+        }
+      } catch (_) {}
+      throw Exception(errorMsg);
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
   Future<Map<String, dynamic>> registerUser({
     required String email,
     required String password,

@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Foreign
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+import uuid
 
 
 class User(Base):
@@ -37,4 +38,26 @@ class UserFavorite(Base):
     
     # Relationships
     user = relationship("User", back_populates="favorites")
-    worker = relationship("Worker") 
+    worker = relationship("Worker")
+
+
+class PasswordReset(Base):
+    __tablename__ = "password_resets"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, nullable=False, index=True)
+    reset_code = Column(String, nullable=False)
+    user_type = Column(String, nullable=False)  # 'user' or 'worker'
+    is_used = Column(Boolean, default=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class EmailVerificationToken(Base):
+    __tablename__ = "verification_tokens"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    user_type = Column(String, nullable=False)  # 'user' or 'worker'
+    token = Column(String, unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    is_used = Column(Boolean, default=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now()) 

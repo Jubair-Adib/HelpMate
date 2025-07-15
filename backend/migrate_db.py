@@ -1,103 +1,64 @@
 import sqlite3
 import os
+from sqlalchemy import create_engine, text
+from app.core.database import Base
+from app.models.user import User, UserFavorite, PasswordReset, EmailVerificationToken
+from app.models.worker import Worker, WorkerOrder
+from app.models.category import Category
+from app.models.service import Service
+from app.models.order import Order
+from app.models.chat import Chat
+from app.core.config import settings
 
 def migrate_database():
-    """Add new fields to existing database tables"""
-    db_path = 'helpmate.db'
+    engine = create_engine(settings.database_url)
     
-    if not os.path.exists(db_path):
-        print("Database file not found. Please run the application first to create the database.")
-        return
+    # Create all tables
+    Base.metadata.create_all(bind=engine)
     
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    
-    try:
-        # Remove booking_status column if it exists (we're reverting this change)
-        cursor.execute("PRAGMA table_info(workers)")
-        columns = [column[1] for column in cursor.fetchall()]
-        
-        if 'booking_status' in columns:
-            print("Removing booking_status column from workers table...")
-            # SQLite doesn't support DROP COLUMN directly, so we need to recreate the table
-            cursor.execute("""
-                CREATE TABLE workers_new (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    email TEXT UNIQUE NOT NULL,
-                    full_name TEXT NOT NULL,
-                    hashed_password TEXT NOT NULL,
-                    phone_number TEXT,
-                    address TEXT,
-                    bio TEXT,
-                    skills TEXT,
-                    hourly_rate REAL,
-                    experience_years INTEGER,
-                    is_available BOOLEAN DEFAULT 1,
-                    rating REAL DEFAULT 0.0,
-                    total_reviews INTEGER DEFAULT 0,
-                    is_verified BOOLEAN DEFAULT 0,
-                    is_active BOOLEAN DEFAULT 1,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            
-            # Copy data from old table to new table
-            cursor.execute("""
-                INSERT INTO workers_new 
-                SELECT id, email, full_name, hashed_password, phone_number, address, 
-                       bio, skills, hourly_rate, experience_years, is_available, 
-                       rating, total_reviews, is_verified, is_active, created_at, updated_at
-                FROM workers
-            """)
-            
-            # Drop old table and rename new table
-            cursor.execute("DROP TABLE workers")
-            cursor.execute("ALTER TABLE workers_new RENAME TO workers")
-            print("✓ booking_status column removed from workers table")
-        else:
-            print("✓ booking_status column doesn't exist in workers table")
-        
-        # Check if payment_method column exists in orders table
-        cursor.execute("PRAGMA table_info(orders)")
-        columns = [column[1] for column in cursor.fetchall()]
-        
-        if 'payment_method' not in columns:
-            print("Adding payment_method column to orders table...")
-            cursor.execute("ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT 'pay_in_person'")
-            print("✓ payment_method column added to orders table")
-        else:
-            print("✓ payment_method column already exists in orders table")
-        
-        # Update existing orders to have pay_in_person payment method
-        cursor.execute("UPDATE orders SET payment_method = 'pay_in_person' WHERE payment_method IS NULL")
-        
-        conn.commit()
-        print("\n✓ Database migration completed successfully!")
-        
-    except Exception as e:
-        print(f"Error during migration: {e}")
-        conn.rollback()
-    finally:
-        conn.close()
-
-def add_is_admin_column(engine):
-    from sqlalchemy import text
-    with engine.connect() as conn:
-        # Check if column already exists
-        result = conn.execute(text("""
-            PRAGMA table_info(users)
+    with engine.connect() as connection:
+        # Check if password_resets table exists
+        result = connection.execute(text("""
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name='password_resets'
         """))
-        columns = [row[1] for row in result]
-        if 'is_admin' not in columns:
-            conn.execute(text("""
-                ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0
+        if not result.fetchone():
+            connection.execute(text("""
+                CREATE TABLE password_resets (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email VARCHAR NOT NULL,
+                    reset_code VARCHAR NOT NULL,
+                    user_type VARCHAR NOT NULL,
+                    is_used BOOLEAN DEFAULT FALSE,
+                    expires_at DATETIME NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
             """))
-            print("Added is_admin column to users table.")
-        else:
-            print("is_admin column already exists.")
+            connection.execute(text("""
+                CREATE INDEX idx_password_resets_email 
+                ON password_resets(email)
+            """))
+            print("Created password_resets table")
+        # Check if verification_tokens table exists
+        result = connection.execute(text("""
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name='verification_tokens'
+        """))
+        if not result.fetchone():
+            connection.execute(text("""
+                CREATE TABLE verification_tokens (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    user_type VARCHAR NOT NULL,
+                    token VARCHAR UNIQUE NOT NULL,
+                    is_used BOOLEAN DEFAULT FALSE,
+                    expires_at DATETIME NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+            print("Created verification_tokens table")
+        connection.commit()
+        print("Database migration completed successfully!")
 
 if __name__ == "__main__":
-    from app.core.database import engine
-    add_is_admin_column(engine)
     migrate_database() 
