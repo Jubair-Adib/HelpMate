@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../constants/theme.dart';
 import '../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
 class ChatScreen extends StatefulWidget {
   final int chatId;
@@ -65,7 +67,13 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageController.clear();
 
     try {
-      await _apiService.sendMessage(widget.chatId, message);
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userType = authProvider.userType;
+      if (userType == 'worker') {
+        await _apiService.sendWorkerMessage(widget.chatId, message);
+      } else {
+        await _apiService.sendMessage(widget.chatId, message);
+      }
       await _loadMessages(); // Reload messages to show the new one
     } catch (e) {
       ScaffoldMessenger.of(
@@ -88,6 +96,14 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessagesList() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userType = authProvider.userType;
+    final currentUser = authProvider.currentUser;
+    final myId =
+        userType == 'worker'
+            ? (currentUser != null ? (currentUser as dynamic).id : null)
+            : (currentUser != null ? (currentUser as dynamic).id : null);
+
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -149,16 +165,18 @@ class _ChatScreenState extends State<ChatScreen> {
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final message = _messages[index];
-        final isUser = message['sender_type'] == 'user';
-
-        return _buildMessageBubble(message, isUser);
+        // Determine if this message is sent by the current user
+        final isMe =
+            (userType == message['sender_type'] &&
+                myId == message['sender_id']);
+        return _buildMessageBubble(message, isMe);
       },
     );
   }
 
-  Widget _buildMessageBubble(Map<String, dynamic> message, bool isUser) {
+  Widget _buildMessageBubble(Map<String, dynamic> message, bool isMe) {
     return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.only(bottom: AppTheme.spacingS),
         padding: const EdgeInsets.symmetric(
@@ -166,7 +184,7 @@ class _ChatScreenState extends State<ChatScreen> {
           vertical: AppTheme.spacingS,
         ),
         decoration: BoxDecoration(
-          color: isUser ? AppTheme.primaryColor : Colors.grey[200],
+          color: isMe ? AppTheme.primaryColor : Colors.grey[200],
           borderRadius: BorderRadius.circular(16),
         ),
         constraints: BoxConstraints(
@@ -178,7 +196,7 @@ class _ChatScreenState extends State<ChatScreen> {
             Text(
               message['content'] ?? '',
               style: TextStyle(
-                color: isUser ? Colors.white : Colors.black87,
+                color: isMe ? Colors.white : Colors.black87,
                 fontSize: 16,
               ),
             ),
@@ -186,7 +204,7 @@ class _ChatScreenState extends State<ChatScreen> {
             Text(
               _formatMessageTime(message['created_at']),
               style: TextStyle(
-                color: isUser ? Colors.white70 : Colors.grey[600],
+                color: isMe ? Colors.white70 : Colors.grey[600],
                 fontSize: 12,
               ),
             ),

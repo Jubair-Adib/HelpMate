@@ -14,6 +14,7 @@ import '../models/category.dart';
 import 'worker_reviews_screen.dart';
 import 'worker_pending_services_screen.dart';
 import 'worker_completed_services_screen.dart';
+import 'worker_chats_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -195,7 +196,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         label: 'View Chats with Client',
                         color: Colors.blue,
                         onTap: () {
-                          // TODO: Navigate to Chats screen
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const WorkerChatsScreen(),
+                            ),
+                          );
                         },
                       ),
                       _buildWorkerPanel(

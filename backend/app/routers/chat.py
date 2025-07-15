@@ -203,32 +203,35 @@ async def send_message(
 @router.get("/{chat_id}/messages", response_model=List[MessageResponse])
 async def get_chat_messages(
     chat_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user = Depends(get_current_user),  # Can be User or Worker
     db: Session = Depends(get_db)
 ):
     """Get all messages in a chat"""
-    if not isinstance(current_user, User):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only users can access messages"
-        )
-    
-    # Check if chat exists and user has access
-    chat = db.query(Chat).filter(
-        Chat.id == chat_id,
-        Chat.user_id == current_user.id
-    ).first()
-    
+    # Find the chat
+    chat = db.query(Chat).filter(Chat.id == chat_id).first()
     if not chat:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Chat not found"
         )
-    
+
+    # Check if current user/worker is a participant
+    allowed = False
+    if isinstance(current_user, User) and chat.user_id == current_user.id:
+        allowed = True
+    if isinstance(current_user, Worker) and chat.worker_id == current_user.id:
+        allowed = True
+
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this chat's messages"
+        )
+
     messages = db.query(Message).filter(
         Message.chat_id == chat_id
     ).order_by(Message.created_at.asc()).all()
-    
+
     return messages
 
 

@@ -866,4 +866,37 @@ class ApiService {
       throw Exception('Failed to fetch completed orders');
     }
   }
+
+  // Worker Chat APIs
+  Future<List<Map<String, dynamic>>> getWorkerChats() async {
+    try {
+      final response = await _get('/v1/chat/worker/chats');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to fetch worker chats: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> sendWorkerMessage(
+    int chatId,
+    String content,
+  ) async {
+    try {
+      final response = await _post('/v1/chat/worker/$chatId/messages', {
+        'content': content,
+      });
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to send worker message: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
 }
