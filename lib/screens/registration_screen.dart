@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import 'home_screen.dart';
 import '../models/category.dart'; // Added import for Category model
 import '../services/api_service.dart'; // Added import for ApiService
+import 'login_screen.dart'; // Added import for LoginScreen
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -120,7 +121,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     if (success) {
       Navigator.of(
         context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -329,7 +330,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     controller: _hourlyRateController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                      labelText: 'Hourly Rate (\$)',
+                      labelText: 'Hourly Rate (BDT)',
                       prefixIcon: Icon(Icons.attach_money),
                     ),
                     validator: (value) {

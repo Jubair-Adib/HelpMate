@@ -97,13 +97,13 @@ def change_order_status(order_id: int, status: str, db: Session = Depends(get_db
 # List all users
 @router.get("/users")
 def list_users(db: Session = Depends(get_db), current_user: User = Depends(admin_required)):
-    users = db.query(User).all()
+    users = db.query(User).order_by(User.created_at.desc()).all()
     return users
 
 # List all workers
 @router.get("/workers")
 def list_workers(db: Session = Depends(get_db), current_user: User = Depends(admin_required)):
-    workers = db.query(Worker).all()
+    workers = db.query(Worker).order_by(Worker.created_at.desc()).all()
     return workers
 
 # List all orders

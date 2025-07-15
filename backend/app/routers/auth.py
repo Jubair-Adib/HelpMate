@@ -49,7 +49,8 @@ def register_user(user: UserCreate, db: Session = Depends(get_db), background_ta
         hashed_password=hashed_password,
         phone_number=user.phone_number,
         address=user.address,
-        is_verified=False
+        is_verified=False,
+        is_active=False
     )
     db.add(db_user)
     db.commit()
@@ -78,6 +79,7 @@ def register_worker(worker: WorkerCreate, db: Session = Depends(get_db), backgro
     worker_data = worker.dict()
     worker_data['hashed_password'] = get_password_hash(worker.password)
     worker_data['is_verified'] = False
+    worker_data['is_active'] = False
     
     try:
         db_worker = WorkerService.create_worker_with_services(db, worker_data)
@@ -107,18 +109,22 @@ def login_user(user_credentials: UserLogin, db: Session = Depends(get_db)):
             headers={"WWW-Authenticate": "Bearer"},
         )
     
+    # Only allow login if is_active is True and (is_verified is True or is_active is True)
+    if not user.is_active and not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Account is not activated or email not verified."
+        )
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Inactive user"
         )
-    
-    if not user.is_verified:
+    if not user.is_verified and not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Please verify your email before logging in."
+            detail="Please verify your email or wait for admin activation."
         )
-    
     access_token = create_access_token(
         data={"sub": user.email, "user_type": "user", "user_id": user.id}
     )
@@ -140,19 +146,22 @@ def login_worker(worker_credentials: WorkerLogin, db: Session = Depends(get_db))
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+    # Only allow login if is_active is True and (is_verified is True or is_active is True)
+    if not worker.is_active and not worker.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Account is not activated or email not verified."
+        )
     if not worker.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Inactive worker"
         )
-    
-    if not worker.is_verified:
+    if not worker.is_verified and not worker.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Please verify your email before logging in."
+            detail="Please verify your email or wait for admin activation."
         )
-    
     access_token = create_access_token(
         data={"sub": worker.email, "user_type": "worker", "user_id": worker.id}
     )
@@ -532,3 +541,9 @@ def verify_email(token: str, db: Session = Depends(get_db)):
             db.commit()
             return {"message": "Email verified successfully. You can now log in."}
     raise HTTPException(status_code=400, detail="Invalid or expired verification token.") 
+
+
+@router.post("/logout")
+def logout():
+    """Logout endpoint for frontend to call. JWT tokens are stateless, so logout is handled client-side by deleting the token."""
+    return {"message": "Logged out successfully."} 

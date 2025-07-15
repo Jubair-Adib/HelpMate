@@ -227,7 +227,10 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
                 ? widget.worker.skills!.join(', ')
                 : 'No skills listed',
           ),
-          _buildInfoRow('Hourly Rate', '\$${widget.worker.hourlyRate ?? 0}/hr'),
+          _buildInfoRow(
+            'Hourly Rate',
+            'BDT ${widget.worker.hourlyRate ?? 0}/hr',
+          ),
           _buildInfoRow('Location', widget.worker.address ?? 'Not specified'),
           _buildInfoRow('Phone', widget.worker.phoneNumber ?? 'Not specified'),
           _buildInfoRow('Member Since', _formatDate(widget.worker.createdAt)),

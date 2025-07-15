@@ -199,7 +199,7 @@ class _WorkerListScreenState extends State<WorkerListScreen> {
                         ),
                         const Spacer(),
                         Text(
-                          '\$${worker.hourlyRate ?? 0}/hr',
+                          'BDT ${worker.hourlyRate ?? 0}/hr',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: Theme.of(context).primaryColor,

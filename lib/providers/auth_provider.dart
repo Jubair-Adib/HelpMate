@@ -163,7 +163,7 @@ class AuthProvider extends ChangeNotifier {
   // Logout
   Future<void> logout() async {
     try {
-      await _apiService.clearStoredData();
+      await _apiService.logout();
       _user = null;
       _worker = null;
       _userType = null;

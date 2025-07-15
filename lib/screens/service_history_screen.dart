@@ -299,7 +299,7 @@ class _ServiceHistoryScreenState extends State<ServiceHistoryScreen> {
                 ),
                 const Spacer(),
                 Text(
-                  '\$${order['total_amount'] ?? 0}',
+                  'BDT ${order['total_amount'] ?? 0}',
                   style: AppTheme.bodyMedium.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primaryColor,

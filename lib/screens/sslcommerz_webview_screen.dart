@@ -4,6 +4,9 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 import '../constants/theme.dart';
 import 'service_history_screen.dart';
 import 'dart:io' show Platform;
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import 'home_screen.dart';
 
 class SslcommerzWebViewScreen extends StatefulWidget {
   final String paymentUrl;
@@ -110,7 +113,7 @@ class _SslcommerzWebViewScreenState extends State<SslcommerzWebViewScreen> {
                 ),
                 const SizedBox(height: AppTheme.spacingS),
                 Text(
-                  'You saved \$${widget.discountAmount.toStringAsFixed(2)} with advance payment.',
+                  'You saved BDT ${widget.discountAmount.toStringAsFixed(2)} with advance payment.',
                   style: AppTheme.bodyMedium.copyWith(
                     fontWeight: FontWeight.w600,
                     color: AppTheme.successColor,
@@ -122,9 +125,30 @@ class _SslcommerzWebViewScreenState extends State<SslcommerzWebViewScreen> {
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop(); // Close dialog
-                  Navigator.of(
-                    context,
-                  ).pop(); // Close WebView, return to previous screen
+                  // Show green SnackBar and navigate to correct home
+                  Future.delayed(Duration.zero, () {
+                    final userType =
+                        Provider.of<AuthProvider>(
+                          context,
+                          listen: false,
+                        ).userType;
+                    Widget home;
+                    if (userType == 'worker') {
+                      home = const HomeScreen();
+                    } else {
+                      home = const HomeScreen();
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Payment successful!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => home),
+                      (route) => false,
+                    );
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.successColor,

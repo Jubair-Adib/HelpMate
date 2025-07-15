@@ -903,4 +903,13 @@ class ApiService {
       throw Exception('Network error: $e');
     }
   }
+
+  // Logout API
+  Future<void> logout() async {
+    try {
+      final response = await _post('/v1/auth/logout', {});
+      // Optionally check response, but backend just returns a message
+    } catch (_) {}
+    await clearStoredData();
+  }
 }

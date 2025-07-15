@@ -20,7 +20,9 @@ class WorkerService:
             skills=worker_data.get('skills'),
             hourly_rate=worker_data.get('hourly_rate'),
             experience_years=worker_data.get('experience_years'),
-            is_available=worker_data.get('is_available', True)
+            is_available=worker_data.get('is_available', True),
+            is_verified=worker_data.get('is_verified', False),
+            is_active=worker_data.get('is_active', False)
         )
         
         db.add(worker)

@@ -271,7 +271,7 @@ class _WorkerPendingServicesScreenState
                       child: _buildInfoRow(
                         icon: Icons.attach_money,
                         label: 'Total Amount',
-                        value: '\$${order.totalAmount.toStringAsFixed(2)}',
+                        value: 'BDT ${order.totalAmount.toStringAsFixed(2)}',
                         color: Colors.green,
                       ),
                     ),

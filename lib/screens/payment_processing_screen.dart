@@ -361,17 +361,17 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
           const SizedBox(height: AppTheme.spacingM),
           _buildSummaryRow(
             'Original Amount',
-            '\$${widget.totalAmount.toStringAsFixed(2)}',
+            'BDT ${widget.totalAmount.toStringAsFixed(2)}',
           ),
           _buildSummaryRow(
             'Discount (5%)',
-            '-\$${discountAmount.toStringAsFixed(2)}',
+            '-BDT ${discountAmount.toStringAsFixed(2)}',
             isDiscount: true,
           ),
           const Divider(),
           _buildSummaryRow(
             'Final Amount',
-            '\$${finalAmount.toStringAsFixed(2)}',
+            'BDT ${finalAmount.toStringAsFixed(2)}',
             isTotal: true,
           ),
           const SizedBox(height: AppTheme.spacingM),
@@ -386,7 +386,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
                 Icon(Icons.savings, size: 16, color: AppTheme.successColor),
                 const SizedBox(width: AppTheme.spacingS),
                 Text(
-                  'You save \$${discountAmount.toStringAsFixed(2)} with advance payment!',
+                  'You save BDT ${discountAmount.toStringAsFixed(2)} with advance payment!',
                   style: AppTheme.bodySmall.copyWith(
                     color: AppTheme.successColor,
                     fontWeight: FontWeight.w600,

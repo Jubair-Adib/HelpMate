@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../constants/theme.dart';
 import 'payment_processing_screen.dart';
+import '../providers/auth_provider.dart'; // Added import for AuthProvider
+import '../screens/home_screen.dart'; // Added import for HomeScreen
+import 'package:provider/provider.dart'; // Added import for Provider
 
 class BookingConfirmationScreen extends StatelessWidget {
   final Map<String, dynamic> orderDetails;
@@ -113,7 +116,7 @@ class BookingConfirmationScreen extends StatelessWidget {
           _buildDetailRow('Hours', '${orderDetails['hours']} hour(s)'),
           _buildDetailRow(
             'Total Amount',
-            '\$${totalAmount.toStringAsFixed(2)}',
+            'BDT${totalAmount.toStringAsFixed(2)}',
           ),
           if (orderDetails['scheduled_date'] != null)
             _buildDetailRow('Scheduled Date', orderDetails['scheduled_date']),
@@ -395,8 +398,19 @@ class BookingConfirmationScreen extends StatelessWidget {
           ),
         );
 
-        // Navigate back to home
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        // Navigate to correct home/dashboard
+        final userType =
+            Provider.of<AuthProvider>(context, listen: false).userType;
+        Widget home;
+        if (userType == 'worker') {
+          home = const HomeScreen(); // HomeScreen will show worker dashboard
+        } else {
+          home = const HomeScreen(); // HomeScreen will show user dashboard
+        }
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => home),
+          (route) => false,
+        );
       });
     }
   }
