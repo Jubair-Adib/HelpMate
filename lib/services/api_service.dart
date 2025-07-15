@@ -228,9 +228,11 @@ class ApiService {
         }),
       );
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        await storeToken(data['access_token'], 'user', data['user_id']);
+        if (data['access_token'] != null && data['user_id'] != null) {
+          await storeToken(data['access_token'], 'user', data['user_id']);
+        }
         return data;
       } else {
         throw Exception('Registration failed: ${response.body}');
@@ -268,9 +270,11 @@ class ApiService {
         }),
       );
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        await storeToken(data['access_token'], 'worker', data['user_id']);
+        if (data['access_token'] != null && data['user_id'] != null) {
+          await storeToken(data['access_token'], 'worker', data['user_id']);
+        }
         return data;
       } else {
         throw Exception('Registration failed: ${response.body}');

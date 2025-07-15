@@ -92,11 +92,19 @@ class AuthProvider extends ChangeNotifier {
         phone: phone,
         address: address,
       );
-      _user = User.fromJson(response['user']);
-      _worker = null;
-      _setLoading(false);
-      notifyListeners();
-      return true;
+      // If response looks like a user object, treat as success
+      if (response is Map && response.containsKey('email')) {
+        _user = User.fromJson(response);
+        _worker = null;
+        _setLoading(false);
+        notifyListeners();
+        return true;
+      } else {
+        _setError('Registration failed: Unexpected response');
+        _setLoading(false);
+        notifyListeners();
+        return false;
+      }
     } catch (e) {
       _setError(e.toString());
       _setLoading(false);
@@ -132,11 +140,18 @@ class AuthProvider extends ChangeNotifier {
         lookingForWork: lookingForWork,
         categoryId: categoryId,
       );
-      _worker = worker_models.Worker.fromJson(response['user']);
-      _user = null;
-      _setLoading(false);
-      notifyListeners();
-      return true;
+      if (response is Map && response.containsKey('email')) {
+        _worker = worker_models.Worker.fromJson(response);
+        _user = null;
+        _setLoading(false);
+        notifyListeners();
+        return true;
+      } else {
+        _setError('Registration failed: Unexpected response');
+        _setLoading(false);
+        notifyListeners();
+        return false;
+      }
     } catch (e) {
       _setError(e.toString());
       _setLoading(false);
