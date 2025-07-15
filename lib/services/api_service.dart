@@ -830,7 +830,7 @@ class ApiService {
             ? '/v1/auth/worker/change-password'
             : '/v1/auth/user/change-password';
     final response = await _post(endpoint, {
-      'old_password': oldPassword,
+      'current_password': oldPassword,
       'new_password': newPassword,
       'confirm_password': confirmPassword,
     });
