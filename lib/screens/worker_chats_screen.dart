@@ -5,7 +5,7 @@ import '../providers/auth_provider.dart';
 import 'chat_screen.dart';
 
 class WorkerChatsScreen extends StatefulWidget {
-  const WorkerChatsScreen({Key? key}) : super(key: key);
+  const WorkerChatsScreen({super.key});
 
   @override
   State<WorkerChatsScreen> createState() => _WorkerChatsScreenState();

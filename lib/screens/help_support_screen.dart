@@ -58,12 +58,12 @@ class HelpSupportScreen extends StatelessWidget {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Email: helpmate.support@gmail.com',
+                      'Email: falam3399@gmail.com',
                       style: TextStyle(fontSize: 15),
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Phone: +880 1234-567890',
+                      'Phone: +880 1552-316249',
                       style: TextStyle(fontSize: 15),
                     ),
                   ],
@@ -99,7 +99,7 @@ class HelpSupportScreen extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                     Text(
-                      '017XXXXXXXX',
+                      '01552-316249',
                       style: TextStyle(fontSize: 16, color: Colors.green),
                     ),
                   ],
@@ -133,7 +133,7 @@ class HelpSupportScreen extends StatelessWidget {
                     InkWell(
                       onTap:
                           () => _launchUrl(
-                            'https://github.com/mastermind-fa/helpmate',
+                            'https://github.com/mastermind-fa/HOME_SERVICE',
                           ),
                       child: const Text(
                         '⭐ Star on GitHub',

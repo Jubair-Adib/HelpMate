@@ -53,6 +53,7 @@ class WorkerUpdate(BaseModel):
     hourly_rate: Optional[float] = None
     experience_years: Optional[int] = None
     is_available: Optional[bool] = None
+    image: Optional[str] = None
 
 
 class ChangePasswordRequest(BaseModel):

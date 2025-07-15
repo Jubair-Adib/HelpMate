@@ -1,4 +1,3 @@
-import 'service.dart';
 
 class Worker {
   final int id;

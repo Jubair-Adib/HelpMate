@@ -34,7 +34,7 @@ class _ProfileTabState extends State<ProfileTab> {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
+    final user = Provider.of<AuthProvider>(context).currentUser;
     String name = 'User';
     String email = '';
     String? image;

@@ -84,7 +84,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         // Use 'phone_number' instead of 'phone'
         _phoneController.text = userProfile['phone_number'] ?? '';
         _addressController.text = userProfile['address'] ?? '';
-        _imagePath = userProfile['image'] ?? null;
+        _imagePath = userProfile['image'];
         _isLoading = false;
       });
     } catch (e) {

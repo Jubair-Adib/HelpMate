@@ -44,7 +44,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       text: (widget.user as dynamic).address ?? '',
     );
     // Use image field if present, else null
-    _imagePath = (widget.user as dynamic).image ?? null;
+    _imagePath = (widget.user as dynamic).image;
     if (widget.user is Worker) {
       final worker = widget.user as Worker;
       _skillsController = TextEditingController(

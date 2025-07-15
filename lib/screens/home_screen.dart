@@ -510,15 +510,17 @@ class _HomeScreenState extends State<HomeScreen> {
     if (n.contains('tutor')) return Icons.school;
     if (n.contains('physician') ||
         n.contains('doctor') ||
-        n.contains('medical'))
+        n.contains('medical')) {
       return Icons.medical_services;
+    }
     if (n.contains('clean')) return Icons.cleaning_services;
     if (n.contains('plumb')) return Icons.plumbing;
     if (n.contains('electric')) return Icons.electrical_services;
     if (n.contains('carpent') || n.contains('wood')) return Icons.handyman;
     if (n.contains('garden')) return Icons.eco;
-    if (n.contains('cook') || n.contains('chef') || n.contains('food'))
+    if (n.contains('cook') || n.contains('chef') || n.contains('food')) {
       return Icons.restaurant;
+    }
     if (n.contains('driver') || n.contains('drive')) return Icons.drive_eta;
     if (n.contains('security') || n.contains('guard')) return Icons.security;
     return Icons.category;
@@ -531,15 +533,17 @@ class _HomeScreenState extends State<HomeScreen> {
     if (n.contains('tutor')) return Colors.orange;
     if (n.contains('physician') ||
         n.contains('doctor') ||
-        n.contains('medical'))
+        n.contains('medical')) {
       return Colors.red;
+    }
     if (n.contains('clean')) return Colors.green;
     if (n.contains('plumb')) return Colors.indigo;
     if (n.contains('electric')) return Colors.amber;
     if (n.contains('carpent') || n.contains('wood')) return Colors.brown;
     if (n.contains('garden')) return Colors.lightGreen;
-    if (n.contains('cook') || n.contains('chef') || n.contains('food'))
+    if (n.contains('cook') || n.contains('chef') || n.contains('food')) {
       return Colors.deepOrange;
+    }
     if (n.contains('driver') || n.contains('drive')) return Colors.teal;
     if (n.contains('security') || n.contains('guard')) return Colors.grey;
     return const Color(0xFF1565C0);

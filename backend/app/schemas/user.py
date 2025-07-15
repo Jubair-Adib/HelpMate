@@ -37,6 +37,7 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
     address: Optional[str] = None
+    image: Optional[str] = None
 
 
 class ChangePasswordRequest(BaseModel):

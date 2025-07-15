@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/theme.dart';
 import 'payment_processing_screen.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 class BookingConfirmationScreen extends StatelessWidget {
   final Map<String, dynamic> orderDetails;

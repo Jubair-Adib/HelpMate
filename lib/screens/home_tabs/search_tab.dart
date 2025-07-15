@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/theme.dart';
 import '../../services/api_service.dart';
-import '../../models/user.dart' as user_models;
 import '../../models/worker.dart';
 import '../../models/category.dart';
 import '../worker_list_screen.dart';
