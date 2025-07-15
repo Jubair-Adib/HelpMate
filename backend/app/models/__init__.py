@@ -5,6 +5,7 @@ from .category import Category
 from .service import Service
 from .order import Order, Review
 from .chat import Chat, Message
+from .notification import Notification
 
 # Export all models
 __all__ = [
@@ -17,5 +18,6 @@ __all__ = [
     "Order",
     "Review",
     "Chat",
-    "Message"
+    "Message",
+    "Notification"
 ] 

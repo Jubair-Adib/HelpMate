@@ -11,6 +11,8 @@ import 'privacy_security_screen.dart';
 import 'admin_panel_screen.dart';
 import '../models/user.dart';
 import '../models/worker.dart' as worker_models;
+import 'notification_screen.dart';
+import '../providers/notification_provider.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
@@ -209,7 +211,23 @@ class _ProfileTabState extends State<ProfileTab> {
                     icon: Icons.notifications_outlined,
                     title: 'Notifications',
                     subtitle: 'Manage your notifications',
-                    onTap: () {},
+                    onTap: () {
+                      final authProvider = Provider.of<AuthProvider>(
+                        context,
+                        listen: false,
+                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => ChangeNotifierProvider(
+                                create:
+                                    (_) => NotificationProvider(authProvider),
+                                child: const NotificationScreen(),
+                              ),
+                        ),
+                      );
+                    },
                   ),
                   _buildProfileOption(
                     icon: Icons.security,

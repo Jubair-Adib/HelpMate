@@ -68,13 +68,30 @@ def change_order_status(order_id: int, status: str, db: Session = Depends(get_db
     order.status = status
     db.commit()
     # If status changed to completed, send notification
-    if not status_was_completed and order.status == "completed" and background_tasks is not None:
-        from app.services.email_service import email_service
-        user = db.query(User).filter(User.id == order.user_id).first()
-        worker = db.query(Worker).filter(Worker.id == order.worker_id).first()
-        background_tasks.add_task(
-            lambda: asyncio.run(email_service.send_order_completed_email(user, worker, order))
+    if not status_was_completed and order.status == "completed":
+        from app.models.notification import Notification
+        user_notif = Notification(
+            user_id=order.user_id,
+            type="order_completed",
+            title="Order Completed",
+            message=f"Your order (ID: {order.id}) has been marked as completed. Description: {order.description}"
         )
+        worker_notif = Notification(
+            worker_id=order.worker_id,
+            type="order_completed",
+            title="Order Completed",
+            message=f"Your order (ID: {order.id}) has been marked as completed. Description: {order.description}"
+        )
+        db.add(user_notif)
+        db.add(worker_notif)
+        db.commit()
+        if background_tasks is not None:
+            from app.services.email_service import email_service
+            user = db.query(User).filter(User.id == order.user_id).first()
+            worker = db.query(Worker).filter(Worker.id == order.worker_id).first()
+            background_tasks.add_task(
+                lambda: asyncio.run(email_service.send_order_completed_email(user, worker, order))
+            )
     return {"success": True, "order_id": order_id, "status": order.status}
 
 # List all users

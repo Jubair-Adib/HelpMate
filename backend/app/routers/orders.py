@@ -9,6 +9,7 @@ from app.schemas.order import OrderCreate, OrderUpdate, OrderResponse, ReviewCre
 from app.routers.auth import get_current_user
 from app.models.worker import Worker
 import asyncio
+from app.models.notification import Notification
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -116,6 +117,24 @@ async def create_order(
     
     db.commit()
     db.refresh(db_order)
+    # Create notifications for user and worker
+    notif_title = "Order Booked"
+    notif_msg = f"Your order (ID: {db_order.id}) has been booked. Description: {db_order.description}"
+    user_notif = Notification(
+        user_id=current_user.id,
+        type="order_booked",
+        title=notif_title,
+        message=notif_msg
+    )
+    worker_notif = Notification(
+        worker_id=worker.id,
+        type="order_booked",
+        title=notif_title,
+        message=notif_msg
+    )
+    db.add(user_notif)
+    db.add(worker_notif)
+    db.commit()
     # Send notification emails to user and worker
     if background_tasks is not None:
         from app.services.email_service import email_service
@@ -209,14 +228,34 @@ async def update_order(
         setattr(db_order, field, value)
     db.commit()
     db.refresh(db_order)
-    # If status changed to completed, send notification
-    if not status_was_completed and db_order.status == "completed" and background_tasks is not None:
-        from app.services.email_service import email_service
+    # If status changed to completed, send notification and create notification records
+    if not status_was_completed and db_order.status == "completed":
+        from app.models.user import User
+        from app.models.worker import Worker
         user = db.query(User).filter(User.id == db_order.user_id).first()
         worker = db.query(Worker).filter(Worker.id == db_order.worker_id).first()
-        background_tasks.add_task(
-            lambda: asyncio.run(email_service.send_order_completed_email(user, worker, db_order))
+        notif_title = "Order Completed"
+        notif_msg = f"Your order (ID: {db_order.id}) has been marked as completed. Description: {db_order.description}"
+        user_notif = Notification(
+            user_id=user.id,
+            type="order_completed",
+            title=notif_title,
+            message=notif_msg
         )
+        worker_notif = Notification(
+            worker_id=worker.id,
+            type="order_completed",
+            title=notif_title,
+            message=notif_msg
+        )
+        db.add(user_notif)
+        db.add(worker_notif)
+        db.commit()
+        if background_tasks is not None:
+            from app.services.email_service import email_service
+            background_tasks.add_task(
+                lambda: asyncio.run(email_service.send_order_completed_email(user, worker, db_order))
+            )
     return db_order
 
 

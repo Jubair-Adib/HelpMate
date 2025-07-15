@@ -43,7 +43,7 @@ class ApiService {
   }
 
   // Get headers with authentication
-  Future<Map<String, String>> _getHeaders() async {
+  Future<Map<String, String>> getHeaders() async {
     final token = await getToken();
     return {
       'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ class ApiService {
 
   // Generic HTTP methods
   Future<http.Response> _get(String endpoint) async {
-    final headers = await _getHeaders();
+    final headers = await getHeaders();
     return await http.get(Uri.parse('$apiUrl$endpoint'), headers: headers);
   }
 
@@ -61,7 +61,7 @@ class ApiService {
     String endpoint,
     Map<String, dynamic> data,
   ) async {
-    final headers = await _getHeaders();
+    final headers = await getHeaders();
     return await http.post(
       Uri.parse('$apiUrl$endpoint'),
       headers: headers,
@@ -70,7 +70,7 @@ class ApiService {
   }
 
   Future<http.Response> _put(String endpoint, Map<String, dynamic> data) async {
-    final headers = await _getHeaders();
+    final headers = await getHeaders();
     return await http.put(
       Uri.parse('$apiUrl$endpoint'),
       headers: headers,
@@ -79,7 +79,7 @@ class ApiService {
   }
 
   Future<http.Response> _delete(String endpoint) async {
-    final headers = await _getHeaders();
+    final headers = await getHeaders();
     return await http.delete(Uri.parse('$apiUrl$endpoint'), headers: headers);
   }
 

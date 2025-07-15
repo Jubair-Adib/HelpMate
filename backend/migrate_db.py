@@ -2,12 +2,8 @@ import sqlite3
 import os
 from sqlalchemy import create_engine, text
 from app.core.database import Base
-from app.models.user import User, UserFavorite, PasswordReset, EmailVerificationToken
-from app.models.worker import Worker, WorkerOrder
-from app.models.category import Category
-from app.models.service import Service
-from app.models.order import Order
-from app.models.chat import Chat
+from app.models import User, Worker, Category, Service, Order, Review, Chat, Message, UserFavorite, WorkerOrder, Notification
+from app.models.user import PasswordReset, EmailVerificationToken
 from app.core.config import settings
 
 def migrate_database():
