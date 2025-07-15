@@ -234,6 +234,41 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // Refresh authentication and user type from token/profile
+  Future<bool> refreshAuthAndUserType() async {
+    try {
+      final token = await _apiService.getToken();
+      if (token == null) {
+        await logout();
+        return false;
+      }
+      // Try worker profile first
+      try {
+        final workerProfile = await _apiService.getWorkerProfile();
+        _worker = worker_models.Worker.fromJson(workerProfile);
+        _user = null;
+        _userType = 'worker';
+        notifyListeners();
+        return true;
+      } catch (_) {}
+      // Try user profile
+      try {
+        final userProfile = await _apiService.getUserProfile();
+        _user = User.fromJson(userProfile);
+        _worker = null;
+        _userType = 'user';
+        notifyListeners();
+        return true;
+      } catch (_) {}
+      // If neither, logout
+      await logout();
+      return false;
+    } catch (_) {
+      await logout();
+      return false;
+    }
+  }
+
   // Helper methods
   void _setLoading(bool loading) {
     _isLoading = loading;

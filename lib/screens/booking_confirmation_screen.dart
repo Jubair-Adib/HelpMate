@@ -4,6 +4,7 @@ import 'payment_processing_screen.dart';
 import '../providers/auth_provider.dart'; // Added import for AuthProvider
 import '../screens/home_screen.dart'; // Added import for HomeScreen
 import 'package:provider/provider.dart'; // Added import for Provider
+import '../screens/login_screen.dart'; // Added import for LoginScreen
 
 class BookingConfirmationScreen extends StatelessWidget {
   final Map<String, dynamic> orderDetails;
@@ -399,18 +400,20 @@ class BookingConfirmationScreen extends StatelessWidget {
         );
 
         // Navigate to correct home/dashboard
-        final userType =
-            Provider.of<AuthProvider>(context, listen: false).userType;
-        Widget home;
-        if (userType == 'worker') {
-          home = const HomeScreen(); // HomeScreen will show worker dashboard
-        } else {
-          home = const HomeScreen(); // HomeScreen will show user dashboard
-        }
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => home),
-          (route) => false,
-        );
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        authProvider.refreshAuthAndUserType().then((authenticated) {
+          if (!authenticated) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => LoginScreen()),
+              (route) => false,
+            );
+          } else {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => HomeScreen()),
+              (route) => false,
+            );
+          }
+        });
       });
     }
   }

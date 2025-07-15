@@ -7,6 +7,7 @@ import 'dart:io' show Platform;
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'home_screen.dart';
+import 'login_screen.dart';
 
 class SslcommerzWebViewScreen extends StatefulWidget {
   final String paymentUrl;
@@ -30,9 +31,9 @@ class _SslcommerzWebViewScreenState extends State<SslcommerzWebViewScreen> {
   late final WebViewController _controller;
 
   // These should match the URLs you set in the payment request
-  final String _successUrl = 'https://helpmate.com/payment/success';
-  final String _failUrl = 'https://helpmate.com/payment/fail';
-  final String _cancelUrl = 'https://helpmate.com/payment/cancel';
+  final String _successUrl = 'http://10.0.2.2:8000/payment/success';
+  final String _failUrl = 'http://10.0.2.2:8000/payment/fail';
+  final String _cancelUrl = 'http://10.0.2.2:8000/payment/cancel';
 
   @override
   void initState() {
@@ -126,28 +127,30 @@ class _SslcommerzWebViewScreenState extends State<SslcommerzWebViewScreen> {
                 onPressed: () {
                   Navigator.of(context).pop(); // Close dialog
                   // Show green SnackBar and navigate to correct home
-                  Future.delayed(Duration.zero, () {
-                    final userType =
-                        Provider.of<AuthProvider>(
-                          context,
-                          listen: false,
-                        ).userType;
-                    Widget home;
-                    if (userType == 'worker') {
-                      home = const HomeScreen();
-                    } else {
-                      home = const HomeScreen();
-                    }
+                  Future.delayed(Duration.zero, () async {
+                    final authProvider = Provider.of<AuthProvider>(
+                      context,
+                      listen: false,
+                    );
+                    final authenticated =
+                        await authProvider.refreshAuthAndUserType();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Payment successful!'),
                         backgroundColor: Colors.green,
                       ),
                     );
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => home),
-                      (route) => false,
-                    );
+                    if (!authenticated) {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => LoginScreen()),
+                        (route) => false,
+                      );
+                    } else {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => HomeScreen()),
+                        (route) => false,
+                      );
+                    }
                   });
                 },
                 style: ElevatedButton.styleFrom(
