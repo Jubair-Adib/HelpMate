@@ -93,7 +93,7 @@ class AuthProvider extends ChangeNotifier {
         address: address,
       );
       // If response looks like a user object, treat as success
-      if (response is Map && response.containsKey('email')) {
+      if (response.containsKey('email')) {
         _user = User.fromJson(response);
         _worker = null;
         _setLoading(false);
@@ -140,7 +140,7 @@ class AuthProvider extends ChangeNotifier {
         lookingForWork: lookingForWork,
         categoryId: categoryId,
       );
-      if (response is Map && response.containsKey('email')) {
+      if (response.containsKey('email')) {
         _worker = worker_models.Worker.fromJson(response);
         _user = null;
         _setLoading(false);

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants/theme.dart';
 import '../providers/auth_provider.dart';
-import 'home_screen.dart';
 import '../models/category.dart'; // Added import for Category model
 import '../services/api_service.dart'; // Added import for ApiService
 import 'login_screen.dart'; // Added import for LoginScreen

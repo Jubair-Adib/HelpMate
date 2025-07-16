@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../constants/theme.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
-import '../models/user.dart';
 import '../models/worker.dart' as worker_models;
 import 'package:image_picker/image_picker.dart';
 
