@@ -1,5 +1,5 @@
 # Database Configuration
-DATABASE_URL=sqlite:///./helpmate.db
+DATABASE_URL=postgresql://postgres.ffykytihaaafystofpli:s%24rsj%24k74Ytz-rA@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
 
 # JWT Configuration
 SECRET_KEY=your-secret-key-here-make-it-long-and-secure
