@@ -15,6 +15,7 @@ A comprehensive home service provider platform that connects customers with skil
     <li><a href="#-features">✨ Features</a></li>
     <li><a href="#-prerequisites">📋 Prerequisites</a></li>
     <li><a href="#-installation--setup">🚀 Installation & Setup</a></li>
+    <li><a href="#-download-apk">📦 Download APK</a></li>
     <li><a href="#-project-architecture">🏗️ Project Architecture</a></li>
     <li><a href="#-development">🔧 Development</a></li>
     <li><a href="#-security-features">🛡️ Security Features</a></li>
@@ -210,6 +211,19 @@ flutter run -d chrome      # Web
 flutter run -d android     # Android
 flutter run -d ios         # iOS
 ```
+
+## 📦 Download APK
+
+You can download the latest HelpMate Android APK from the following Google Drive link:
+
+[👉 Download HelpMate APK](https://drive.google.com/file/d/1bA_7Cc5rmsa--bhDB-CaUDA9av-vfsaZ/view?usp=sharing)
+
+**Supported Platforms:**
+- ✅ **Android** - Full support with native features
+- ✅ **iOS** - Full support with native features  
+- ✅ **Web** - Full support with responsive design
+
+---
 
 ## 🏗️ Project Architecture
 
