@@ -383,7 +383,7 @@ We welcome contributions! Please follow these steps:
       <br />
       <sub><b>Masum</b></sub>
       <br />
-      <a href="https://www.facebook.com/nmrmasumbd">💻 🧪 📊</a>
+      <a href="https://github.com/nmrmasum">💻 🧪 📊</a>
       <br />
       <small>UI/UX Designer</small>
     </td>
