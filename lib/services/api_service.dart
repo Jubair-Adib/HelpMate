@@ -7,10 +7,10 @@ import '../models/review.dart'; // Added for Review
 import '../models/order.dart'; // Added for Order
 
 class ApiService {
-  // static const String baseUrl = 'http://10.0.2.2:8000';
+  static const String baseUrl = 'http://10.0.2.2:8000';
   // static const String baseUrl = 'https://helpmate-backend.vercel.app';
-  static const String baseUrl =
-      'https://helpmatebackend-production.up.railway.app';
+  // static const String baseUrl =
+  //     'https://helpmatebackend-production.up.railway.app';
   static const String apiUrl = '$baseUrl/api';
 
   // Shared preferences key
