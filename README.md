@@ -12,7 +12,6 @@ A comprehensive home service provider platform that connects customers with skil
   <summary><b>Expand Table of Contents</b></summary>
   <ul>
     <li><a href="#-project-overview">📱 Project Overview</a></li>
-    <li><a href="#-key-app-screens">🎯 Key App Screens</a></li>
     <li><a href="#-features">✨ Features</a></li>
     <li><a href="#-prerequisites">📋 Prerequisites</a></li>
     <li><a href="#-installation--setup">🚀 Installation & Setup</a></li>
@@ -39,41 +38,7 @@ HelpMate is a full-stack application consisting of:
 - **Real-time Communication**: WebSocket-based chat system
 - **File Storage**: Local storage with image handling capabilities
 
-## 🎯 Key App Screens
 
-<div align="center">
-  <table>
-    <tr>
-      <td align="center" width="20%">
-        <img src="assets/images/farhana.png" alt="Login" width="100"/><br>
-        <b>🔐 Authentication</b><br>
-        <span style="font-size:13px;">Secure login, registration, and password reset</span>
-      </td>
-      <td align="center" width="20%">
-        <img src="assets/images/jubair.png" alt="Home Dashboard" width="100"/><br>
-        <b>🏠 Home Dashboard</b><br>
-        <span style="font-size:13px;">Service categories and featured workers</span>
-      </td>
-      <td align="center" width="20%">
-        <img src="assets/images/kabbo.png" alt="Worker Details" width="100"/><br>
-        <b>👷 Worker Details</b><br>
-        <span style="font-size:13px;">Worker profiles, reviews, and booking</span>
-      </td>
-      <td align="center" width="20%">
-        <img src="assets/images/masum.png" alt="Orders" width="100"/><br>
-        <b>📋 Orders</b><br>
-        <span style="font-size:13px;">Track service orders and history</span>
-      </td>
-      <td align="center" width="20%">
-        <img src="assets/images/helpmate_logo.png" alt="Admin Panel" width="100"/><br>
-        <b>⚙️ Admin Panel</b><br>
-        <span style="font-size:13px;">Comprehensive admin dashboard</span>
-      </td>
-    </tr>
-  </table>
-</div>
-
----
 
 ## ✨ Features
 
@@ -137,7 +102,7 @@ HelpMate is a full-stack application consisting of:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/HelpMate.git
+git clone https://github.com/mastermind-fa/TeamMechaBytes.git
 cd HelpMate
 ```
 
