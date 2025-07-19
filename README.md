@@ -356,7 +356,7 @@ We welcome contributions! Please follow these steps:
       <br />
       <sub><b>Farhana Alam</b></sub>
       <br />
-      <a href="https://github.com/farhanaalam">🐛 💻 📖</a>
+      <a href="https://github.com/mastermind-fa">🐛 💻 📖</a>
       <br />
       <small>Full-Stack Developer</small>
     </td>
@@ -365,7 +365,7 @@ We welcome contributions! Please follow these steps:
       <br />
       <sub><b>Jubair</b></sub>
       <br />
-      <a href="https://github.com/jubair">💻 🎨 📱</a>
+      <a href="https://github.com/Jubair-Adib">💻 🎨 📱</a>
       <br />
       <small>Frontend Developer</small>
     </td>
@@ -374,7 +374,7 @@ We welcome contributions! Please follow these steps:
       <br />
       <sub><b>Kabbo</b></sub>
       <br />
-      <a href="https://github.com/kabbo">💻 🗃️ ⚡</a>
+      <a href="https://github.com/shakinalamkabbo">💻 🗃️ ⚡</a>
       <br />
       <small>Backend Developer</small>
     </td>
@@ -383,7 +383,7 @@ We welcome contributions! Please follow these steps:
       <br />
       <sub><b>Masum</b></sub>
       <br />
-      <a href="https://github.com/masum">💻 🧪 📊</a>
+      <a href="https://www.facebook.com/nmrmasumbd">💻 🧪 📊</a>
       <br />
       <small>UI/UX Designer</small>
     </td>
