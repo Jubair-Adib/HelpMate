@@ -110,7 +110,7 @@ class AboutScreen extends StatelessWidget {
                   name: 'NMR Masum',
                   university: 'University of Dhaka',
                   email: 'nmrmasumbdkk531@gmail.com',
-                  github: 'https://www.github.com/masum',
+                  github: 'https://github.com/nmrmasum',
                   linkedin: 'https://www.linkedin.com/in/nmr-masum-778a3b2a0/',
                   imagePath: 'assets/images/masum.png', // Add photo here
                 ),
