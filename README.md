@@ -411,7 +411,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [SSLCommerz Documentation](https://developer.sslcommerz.com/)
 
-## 📱 Video Recording: 
+## 📱 Video Recording
 - [Watch here](https://youtu.be/MYj8H_tTMrM)
 ---
 
